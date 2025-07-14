@@ -43,10 +43,9 @@ defmodule ImageDetection.MixProject do
 
   defp deps do
     [
-      {:image, "~> 0.27.0"},
-      {:nx, "~> 0.5"},
-      {:exla, "~> 0.5"},
-      {:axon_onnx, github: "elixir-image/axon_onnx"}
+      {:image, "~> 0.61"},
+      {:axon_onnx, github: "elixir-nx/axon_onnx"}
+      # {:axon_onnx, "~> 0.4"}
     ]
   end
 
