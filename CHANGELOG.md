@@ -1,11 +1,31 @@
 # Changelog
 
-## ImageVision v0.2.0
+## ImageVision v0.1.0
 
-This is the initial release of `image_vision` (formerly `image_detection`). It covers three vision tasks — classification, segmentation, and object detection — with permissively-licensed default models, automatic weight downloads, and a simple API designed for developers who are not ML experts.
+Initial release of `image_vision`. The library was originally planned as `image_detection`, but the scope grew to cover classification, segmentation, and object detection — so it was renamed before any version was published. There is no prior published release under either name.
 
-See the [README](https://github.com/elixir-image/image_vision/blob/v0.2.0/README.md) for the full feature overview and quick-start examples.
+`image_vision` is a thin, opinionated wrapper around the Elixir ML ecosystem (Bumblebee, Ortex, Nx) that sits next to the [`image`](https://hex.pm/packages/image) library. It exposes three vision tasks through a small API designed for developers who are not ML experts: pass a `t:Vix.Vips.Image.t/0` in, get useful results out. Strong, permissively-licensed defaults handle model selection, backend configuration, and weight downloads automatically.
 
-## image_detection v0.1.0
+### Highlights
 
-Initial release of the experimental `image_detection` library. Provided YOLO v8-based object detection, ResNet-50 classification, and Stable Diffusion image generation.
+* **Image classification** via `Image.Classification.classify/2` and `Image.Classification.labels/2` — returns ImageNet-1k labels with confidence scores. Default model is `facebook/convnext-tiny-224` (Apache 2.0, ~110 MB), powered by Bumblebee.
+
+* **Image embeddings** via `Image.Classification.embed/2` — returns a 768-dim feature vector suitable for similarity search, clustering, or as input to a downstream classifier. Default model is `facebook/dinov2-base` (Apache 2.0, ~340 MB).
+
+* **Object detection** via `Image.Detection.detect/2` — returns bounding boxes with class labels and scores across the 80 COCO classes. Default model is `onnx-community/rtdetr_r50vd` (Apache 2.0, ~175 MB), an NMS-free real-time transformer detector that beats YOLOv8 on COCO without YOLO's AGPL licensing constraints.
+
+* **Promptable segmentation** via `Image.Segmentation.segment/2` — point, box, or multi-point prompts produce precise pixel masks via SAM 2. Default model is `SharpAI/sam2-hiera-tiny-onnx` (Apache 2.0, ~150 MB encoder + decoder).
+
+* **Panoptic segmentation** via `Image.Segmentation.segment_panoptic/2` — every region in the image gets a class label across 133 COCO panoptic categories (things and stuff). Default model is `Xenova/detr-resnet-50-panoptic` (Apache 2.0, ~175 MB). Includes a baked-in canonical COCO panoptic id→label map so common stuff classes resolve correctly even on repos with incomplete `config.json` entries.
+
+* **Result composition helpers** that return `t:Vix.Vips.Image.t/0` directly: `Image.Detection.draw_bbox_with_labels/3` (configurable opacity, stroke width, font size, palette), `Image.Segmentation.compose_overlay/3` (colour-coded overlay of all panoptic segments), and `Image.Segmentation.apply_mask/2` (mask as alpha channel for cutouts).
+
+* **Automatic model weight management** via `ImageVision.ModelCache` — ONNX weights download from HuggingFace on first call and cache on disk. Cache directory is configurable via `config :image_vision, :cache_dir, ...`; defaults to an XDG-compliant per-user cache. Bumblebee weights use Bumblebee's own HF cache.
+
+* **`mix image_vision.download_models`** task pre-fetches every default model so first-call latency is eliminated and the library can run offline. Pass `--classify`, `--detect`, or `--segment` to limit scope. Honours user overrides for the Bumblebee classifier and embedder.
+
+* **Optional ML dependencies** — `:bumblebee`, `:nx`, and `:ortex` are all `optional: true` in `mix.exs`. The library compiles cleanly without them; each task module is compile-time gated on its underlying runtime so you only pay for what you use.
+
+* **Strong, opinionated defaults** chosen for permissive licensing (Apache 2.0 / MIT only — no AGPL/GPL, no non-commercial), reasonable size (<500 MB), broad applicability, and proven quality. Power users can override every default through options or app config.
+
+See the [README](https://github.com/elixir-image/image_vision/blob/v0.1.0/README.md) for installation, prerequisites (toolchain, disk space, Livebook Desktop), and quick-start examples. The [classification](https://github.com/elixir-image/image_vision/blob/v0.1.0/guides/classification.md), [detection](https://github.com/elixir-image/image_vision/blob/v0.1.0/guides/detection.md), and [segmentation](https://github.com/elixir-image/image_vision/blob/v0.1.0/guides/segmentation.md) guides cover each task in depth, including how to swap in alternative models.
