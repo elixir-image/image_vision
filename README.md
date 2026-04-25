@@ -47,8 +47,8 @@ def deps do
 
     # Required for Image.Classification and Image.Classification.embed/2
     {:bumblebee, "~> 0.6"},
-    {:nx, "~> 0.11"},
-    {:exla, "~> 0.9"},      # or {:torchx, "~> 0.9"} for Torch backend
+    {:nx, "~> 0.10"},
+    {:exla, "~> 0.10"},     # or {:torchx, "~> 0.10"} for Torch backend
 
     # Required for Image.Detection and Image.Segmentation
     {:ortex, "~> 0.1"}
@@ -57,6 +57,69 @@ end
 ```
 
 All ML deps are optional — omit any you do not use. The library compiles cleanly without them.
+
+## Prerequisites
+
+For the vast majority of users on Linux x86_64, macOS (Intel and Apple Silicon), and Windows x86_64, **no native toolchain is required**. The libraries used here ship precompiled native binaries for those platforms and `mix deps.get` is all you need.
+
+If your platform isn't covered by precompiled binaries — uncommon Linux distros, ARM Linux, glibc mismatches — you'll need:
+
+* **A Rust toolchain** for `:ortex` (the ONNX runtime wrapper used by detection and segmentation) and for `:tokenizers` (pulled in transitively by `:bumblebee`). Install via [rustup](https://rustup.rs):
+
+  ```bash
+  curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+  ```
+
+* **A C compiler** for `:vix` (the libvips wrapper used by `:image`). On Linux install `build-essential` (Debian/Ubuntu) or `gcc` (Fedora/RHEL); on macOS install Xcode Command Line Tools (`xcode-select --install`).
+
+* **`libvips`** if you need advanced libvips features beyond what the precompiled NIF includes. On macOS: `brew install vips`. On Linux: your distro's `libvips-dev` / `vips-devel` package. Most users don't need this.
+
+If you see Cargo or `cc` errors during `mix deps.compile`, you've likely landed on a platform without precompiled coverage — install the toolchain above and re-run.
+
+### Disk space and first-call latency
+
+Model weights are downloaded on first call and cached on disk. Across all three default models the total is approximately:
+
+| Task | Default model | Size |
+|---|---|---|
+| Classification | `facebook/convnext-tiny-224` | ~110 MB |
+| Detection | `onnx-community/rtdetr_r50vd` | ~175 MB |
+| Segmentation (SAM 2) | `SharpAI/sam2-hiera-tiny-onnx` | ~150 MB |
+| Segmentation (panoptic) | `Xenova/detr-resnet-50-panoptic` | ~175 MB |
+
+The first call to each task therefore appears to "hang" while weights download — that's expected, not a bug.
+
+To pre-download all default models before first use (recommended for production deployments and CI):
+
+```bash
+mix image_vision.download_models
+```
+
+Pass `--classify`, `--detect`, or `--segment` to limit scope.
+
+### Livebook Desktop
+
+Livebook Desktop launches as a GUI application and **does not inherit your shell's `PATH`**. Tools installed via `rustup`, `mise`, `asdf`, or Homebrew aren't visible to it by default — even if `cargo` works fine in your terminal.
+
+If you hit "cargo: command not found" or similar during `Mix.install` inside Livebook Desktop, create `~/.livebookdesktop.sh` and add the relevant directories to `PATH`. A reasonable starting point:
+
+```bash
+# ~/.livebookdesktop.sh
+
+# Rust (rustup)
+export PATH="$HOME/.cargo/bin:$PATH"
+
+# Homebrew (Apple Silicon)
+export PATH="/opt/homebrew/bin:$PATH"
+
+# mise — uncomment if you use it
+# eval "$(mise activate bash)"
+
+# asdf — uncomment if you use it
+# . "$HOME/.asdf/asdf.sh"
+```
+
+Restart Livebook Desktop after creating this file. See the [Livebook Desktop documentation](https://github.com/livebook-dev/livebook/blob/main/README.md#livebook-desktop) for details.
 
 ## Default models
 

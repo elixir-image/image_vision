@@ -95,6 +95,54 @@ Adjust transparency with `:alpha` (default `0.5`):
 iex> overlay = Image.Segmentation.compose_overlay(street, segments, alpha: 0.3)
 ```
 
+## Using a different model
+
+Both `segment/2` and `segment_panoptic/2` accept options to swap models. They are passed per call rather than via app config — neither function uses a long-running serving, so there is no autostart cost to overriding on a single call.
+
+### Promptable (SAM 2)
+
+```elixir
+# Use a larger SAM 2 variant for better quality on small or thin objects
+iex> Image.Segmentation.segment(image,
+...>   prompt: {:point, 320, 240},
+...>   repo: "SharpAI/sam2-hiera-small-onnx")
+```
+
+`segment/2` accepts:
+
+- `:repo` — any HuggingFace repo containing a SAM 2 ONNX export with separate encoder and decoder files
+- `:encoder_file` — encoder filename within the repo (default `"encoder.onnx"`)
+- `:decoder_file` — decoder filename within the repo (default `"decoder.onnx"`)
+
+The protocol matches `SharpAI/sam2-hiera-tiny-onnx` (separate encoder/decoder, the standard SAM 2 ONNX export shape). Repos that bundle both into a single file or use a different I/O layout will not work without changes to the wrapper.
+
+### Class-labeled (DETR-panoptic)
+
+```elixir
+# Quantized variant — much smaller, some accuracy cost
+iex> Image.Segmentation.segment_panoptic(image, model_file: "onnx/model_quantized.onnx")
+
+# A different ONNX-exported DETR-panoptic repo
+iex> Image.Segmentation.segment_panoptic(image, repo: "your-org/detr-panoptic-onnx")
+```
+
+`segment_panoptic/2` accepts:
+
+- `:repo` — any HuggingFace repo with a DETR-panoptic ONNX export and a `config.json` providing `id2label`
+- `:model_file` — ONNX filename within the repo (default `"onnx/model.onnx"`)
+
+Labels are read from the repo's `config.json`. Where that config has placeholder `LABEL_n` entries, the wrapper falls back to the canonical [COCO panoptic taxonomy](https://github.com/cocodataset/panopticapi/blob/master/panoptic_coco_categories.json), so common stuff classes (`sky-other-merged`, `mountain-merged`, `grass-merged`, …) resolve correctly even on repos with incomplete configs.
+
+### Pre-downloading
+
+To populate the cache before first use:
+
+```bash
+mix image_vision.download_models --segment
+```
+
+This fetches the configured defaults. For non-default repos, the cache populates on first call to `segment/2` or `segment_panoptic/2`.
+
 ## Dependencies
 
 Segmentation requires `:ortex`. Add to `mix.exs`:

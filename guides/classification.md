@@ -59,6 +59,16 @@ config :image_vision, :classifier,
   featurizer: {:hf, "facebook/convnext-large-224-22k-1k"}
 ```
 
+The embedder is configured the same way, independently:
+
+```elixir
+config :image_vision, :embedder,
+  model: {:hf, "facebook/dinov2-large"},
+  featurizer: {:hf, "facebook/dinov2-large"}
+```
+
+Any image classification or image embedding model that Bumblebee can load works as a drop-in replacement — anything from the [HuggingFace image-classification](https://huggingface.co/models?pipeline_tag=image-classification) or [feature-extraction](https://huggingface.co/models?pipeline_tag=feature-extraction) catalogue with a corresponding featurizer. Larger models trade speed and memory for accuracy. The label set will be whatever the chosen model was trained on — for example, `convnext-large-224-22k-1k` returns the same 1000 ImageNet labels as the default, while a model fine-tuned on a different dataset returns that dataset's labels.
+
 To manage the serving yourself (e.g. in an umbrella app):
 
 ```elixir
@@ -67,6 +77,14 @@ config :image_vision, :classifier, autostart: false
 
 # application.ex
 children = [Image.Classification.classifier()]
+```
+
+Configuration changes take effect at application start. After editing `config/runtime.exs`, restart the application; the new model is downloaded on first call and cached.
+
+To pre-download a configured model so first-call latency is eliminated:
+
+```bash
+mix image_vision.download_models --classify
 ```
 
 ## Dependencies
