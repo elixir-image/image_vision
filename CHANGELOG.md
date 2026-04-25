@@ -1,10 +1,11 @@
 # Changelog
 
-## Image Detection version  0.1.0
+## ImageVision v0.2.0
 
-This is the changelog for Image Detection version 0.1.0 released on ____, 2023.  For older changelogs please consult the release tag on [GitHub](https://github.com/kipcole9/image/tags)
+This is the initial release of `image_vision` (formerly `image_detection`). It covers three vision tasks — classification, segmentation, and object detection — with permissively-licensed default models, automatic weight downloads, and a simple API designed for developers who are not ML experts.
 
-### Enhancements
+See the [README](https://github.com/elixir-image/image_vision/blob/v0.2.0/README.md) for the full feature overview and quick-start examples.
 
-* Initial version.
+## image_detection v0.1.0
 
+Initial release of the experimental `image_detection` library. Provided YOLO v8-based object detection, ResNet-50 classification, and Stable Diffusion image generation.
