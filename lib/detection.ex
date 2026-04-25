@@ -54,6 +54,12 @@ if ImageVision.ortex_configured?() do
     @num_classes 80
     @default_min_score 0.5
 
+    # 10-colour high-contrast palette for `draw_bbox_with_labels/3`.
+    @default_palette ~w(
+      #e6194b #3cb44b #4363d8 #f58231 #911eb4
+      #42d4f4 #f032e6 #bfef45 #469990 #9a6324
+    )
+
     # Standard 80-class COCO labels in the order produced by the
     # HuggingFace RT-DETR `id2label` map. Baked at compile time so
     # the module works without `priv/` lookups.
@@ -155,8 +161,23 @@ if ImageVision.ortex_configured?() do
 
     * `image` is the image upon which detection was run.
 
-    * `options` is a keyword list of options. Currently unused;
-      accepted for forward compatibility.
+    * `options` is a keyword list of options.
+
+    ### Options
+
+    * `:opacity` is the opacity of the label background, a float in
+      `[0.0, 1.0]`. The default is `0.85`. Use `1.0` for fully
+      opaque label backgrounds.
+
+    * `:stroke_width` is the bounding box stroke width in pixels.
+      The default is `2`.
+
+    * `:font_size` is the label text size in pixels. The default
+      is `13`.
+
+    * `:palette` is a list of CSS colour strings used to assign
+      colours to labels. Cycles if there are more labels than
+      colours. The default is a 10-colour high-contrast palette.
 
     ### Returns
 
@@ -174,14 +195,17 @@ if ImageVision.ortex_configured?() do
 
     """
     @spec draw_bbox_with_labels([detection()], Vimage.t(), Keyword.t()) :: Vimage.t()
-    def draw_bbox_with_labels(detections, %Vimage{} = image, _options \\ []) do
+    def draw_bbox_with_labels(detections, %Vimage{} = image, options \\ []) do
+      opacity = Keyword.get(options, :opacity, 0.85)
+      stroke_width = Keyword.get(options, :stroke_width, 2)
+      font_size = Keyword.get(options, :font_size, 13)
+      palette = Keyword.get(options, :palette, @default_palette)
+
       width = Image.width(image)
       height = Image.height(image)
 
-      palette = ~w(
-        #e6194b #3cb44b #4363d8 #f58231 #911eb4
-        #42d4f4 #f032e6 #bfef45 #469990 #9a6324
-      )
+      label_height = font_size + 5
+      text_baseline = font_size + 1
 
       label_colors =
         detections
@@ -194,15 +218,16 @@ if ImageVision.ortex_configured?() do
         Enum.map(detections, fn %{label: label, score: score, box: {x, y, w, h}} ->
           color = Map.fetch!(label_colors, label)
           text = "#{label} #{Float.round(score * 100, 1)}%"
-          label_y = max(0, y - 20)
-          label_w = String.length(text) * 8 + 8
+          label_y = max(0, y - label_height)
+          label_w = round(String.length(text) * font_size * 0.55) + 8
 
           """
           <rect x="#{x}" y="#{y}" width="#{w}" height="#{h}"
-                fill="none" stroke="#{color}" stroke-width="2"/>
-          <rect x="#{x}" y="#{label_y}" width="#{label_w}" height="20" fill="#{color}"/>
-          <text x="#{x + 4}" y="#{label_y + 14}"
-                font-family="sans-serif" font-size="13" font-weight="bold" fill="white">#{text}</text>
+                fill="none" stroke="#{color}" stroke-width="#{stroke_width}"/>
+          <rect x="#{x}" y="#{label_y}" width="#{label_w}" height="#{label_height}"
+                fill="#{color}" opacity="#{opacity}"/>
+          <text x="#{x + 4}" y="#{label_y + text_baseline}"
+                font-family="sans-serif" font-size="#{font_size}" font-weight="bold" fill="white">#{text}</text>
           """
         end)
         |> Enum.join()

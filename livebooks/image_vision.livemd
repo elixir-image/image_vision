@@ -81,51 +81,10 @@ detections = Image.Detection.detect(image)
 ```
 
 ```elixir
-# Assign a consistent colour to each label so the overlay is easy to read.
-colours = [
-  "#e6194b", "#3cb44b", "#4363d8", "#f58231", "#911eb4",
-  "#42d4f4", "#f032e6", "#bfef45", "#fabed4", "#469990"
-]
-
-label_colours =
-  detections
-  |> Enum.map(& &1.label)
-  |> Enum.uniq()
-  |> Enum.zip(Stream.cycle(colours))
-  |> Map.new()
-
-width = Image.width(image)
-height = Image.height(image)
-
-# Build an SVG overlay: one rect + label per detection.
-boxes_svg =
-  Enum.map(detections, fn %{label: label, score: score, box: {x, y, w, h}} ->
-    colour = Map.get(label_colours, label, "#ffffff")
-    pct = Float.round(score * 100, 1)
-    text = "#{label} #{pct}%"
-    # Label background sits above the box; clamp to image top.
-    label_y = max(0, trunc(y) - 18)
-
-    """
-    <rect x="#{trunc(x)}" y="#{trunc(y)}" width="#{trunc(w)}" height="#{trunc(h)}"
-          fill="none" stroke="#{colour}" stroke-width="2"/>
-    <rect x="#{trunc(x)}" y="#{label_y}" width="#{String.length(text) * 7 + 6}" height="18"
-          fill="#{colour}" opacity="0.85"/>
-    <text x="#{trunc(x) + 3}" y="#{label_y + 13}"
-          font-family="sans-serif" font-size="13" font-weight="bold" fill="white">#{text}</text>
-    """
-  end)
-  |> Enum.join("\n")
-
-svg = """
-<svg xmlns="http://www.w3.org/2000/svg" width="#{width}" height="#{height}">
-  #{boxes_svg}
-</svg>
-"""
-
-{:ok, overlay} = Image.open(svg, access: :sequential)
-{:ok, result} = Image.compose(image, overlay)
-result
+# Draw bounding boxes and labels using the library helper.
+# See Image.Detection.draw_bbox_with_labels/3 for tunable options
+# (`:opacity`, `:stroke_width`, `:font_size`, `:palette`).
+Image.Detection.draw_bbox_with_labels(detections, image)
 ```
 
 ```elixir
