@@ -4,10 +4,11 @@
 Mix.install([
   {:image_vision, github: "elixir-image/image_vision"},
   {:kino, "~> 0.14"},
-  # Nx backend required for classification (Bumblebee)
-  {:exla, "~> 0.9"},
-  {:nx, "~> 0.11", override: true},
-  # ONNX runtime required for detection and segmentation
+  # Required for classification (Bumblebee servings).
+  {:bumblebee, "~> 0.6"},
+  {:nx, "~> 0.10"},
+  {:exla, "~> 0.10"},
+  # Required for detection and segmentation (ONNX runtime).
   {:ortex, "~> 0.1"}
 ])
 ```
