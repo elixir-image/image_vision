@@ -91,6 +91,7 @@ defmodule ImageVision.MixProject do
         "lib",
         "priv",
         "guides",
+        "logo.jpg",
         "mix.exs",
         "README*",
         "CHANGELOG*",
@@ -114,6 +115,7 @@ defmodule ImageVision.MixProject do
     [
       source_ref: "v#{@version}",
       main: "readme",
+      logo: "logo.jpg",
       extra_section: "Guides",
       extras: extras(),
       formatters: ["html"],
