@@ -156,16 +156,16 @@ if ImageVision.bumblebee_configured?() do
     """
     @spec classifier(configuration :: Keyword.t()) ::
             {Nx.Serving, Keyword.t()} | {:error, Image.error()}
-    def classifier(classifier \\ Application.get_env(:image_vision, :classifier, [])) do
-      classifier = Keyword.merge(@default_classifier, classifier)
+    def classifier(configuration \\ Application.get_env(:image_vision, :classifier, [])) do
+      configuration = Keyword.merge(@default_classifier, configuration)
 
-      model = Keyword.fetch!(classifier, :model)
-      model_options = Keyword.fetch!(classifier, :model_options)
+      model = Keyword.fetch!(configuration, :model)
+      model_options = Keyword.fetch!(configuration, :model_options)
 
-      featurizer = Keyword.fetch!(classifier, :featurizer)
-      featurizer_options = Keyword.fetch!(classifier, :featurizer_options)
+      featurizer = Keyword.fetch!(configuration, :featurizer)
+      featurizer_options = Keyword.fetch!(configuration, :featurizer_options)
 
-      batch_size = Keyword.fetch!(classifier, :batch_size)
+      batch_size = Keyword.fetch!(configuration, :batch_size)
 
       case Image.Classification.serving(
              model,
@@ -178,7 +178,7 @@ if ImageVision.bumblebee_configured?() do
           {:error, error}
 
         serving ->
-          {Nx.Serving, serving: serving, name: classifier[:name], batch_timeout: 100}
+          {Nx.Serving, serving: serving, name: configuration[:name], batch_timeout: 100}
       end
     end
 
@@ -222,16 +222,16 @@ if ImageVision.bumblebee_configured?() do
     """
     @spec embedder(configuration :: Keyword.t()) ::
             {Nx.Serving, Keyword.t()} | {:error, Image.error()}
-    def embedder(embedder \\ Application.get_env(:image_vision, :embedder, [])) do
-      embedder = Keyword.merge(@default_embedder, embedder)
+    def embedder(configuration \\ Application.get_env(:image_vision, :embedder, [])) do
+      configuration = Keyword.merge(@default_embedder, configuration)
 
-      model = Keyword.fetch!(embedder, :model)
-      model_options = Keyword.fetch!(embedder, :model_options)
+      model = Keyword.fetch!(configuration, :model)
+      model_options = Keyword.fetch!(configuration, :model_options)
 
-      featurizer = Keyword.fetch!(embedder, :featurizer)
-      featurizer_options = Keyword.fetch!(embedder, :featurizer_options)
+      featurizer = Keyword.fetch!(configuration, :featurizer)
+      featurizer_options = Keyword.fetch!(configuration, :featurizer_options)
 
-      batch_size = Keyword.fetch!(embedder, :batch_size)
+      batch_size = Keyword.fetch!(configuration, :batch_size)
 
       case embedding_serving(
              model,
@@ -244,7 +244,7 @@ if ImageVision.bumblebee_configured?() do
           {:error, error}
 
         serving ->
-          {Nx.Serving, serving: serving, name: embedder[:name], batch_timeout: 100}
+          {Nx.Serving, serving: serving, name: configuration[:name], batch_timeout: 100}
       end
     end
 

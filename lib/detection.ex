@@ -288,10 +288,10 @@ if ImageVision.ortex_configured?() do
     # by `:min_score`, scale boxes back to the original image, and
     # return them sorted by descending score.
 
-    defp postprocess(logits, pred_boxes, scale_x, scale_y, opts) do
-      original_width = Keyword.fetch!(opts, :original_width)
-      original_height = Keyword.fetch!(opts, :original_height)
-      min_score = Keyword.fetch!(opts, :min_score)
+    defp postprocess(logits, pred_boxes, scale_x, scale_y, options) do
+      original_width = Keyword.fetch!(options, :original_width)
+      original_height = Keyword.fetch!(options, :original_height)
+      min_score = Keyword.fetch!(options, :min_score)
 
       scores =
         logits[0]
@@ -338,11 +338,11 @@ if ImageVision.ortex_configured?() do
     # pixel coordinates on the original image. Clips to image bounds
     # and returns nil if the result has zero area.
 
-    defp cxcywh_to_xywh(cx, cy, w, h, opts) do
-      scale_x = Keyword.fetch!(opts, :scale_x)
-      scale_y = Keyword.fetch!(opts, :scale_y)
-      max_width = Keyword.fetch!(opts, :max_width)
-      max_height = Keyword.fetch!(opts, :max_height)
+    defp cxcywh_to_xywh(cx, cy, w, h, options) do
+      scale_x = Keyword.fetch!(options, :scale_x)
+      scale_y = Keyword.fetch!(options, :scale_y)
+      max_width = Keyword.fetch!(options, :max_width)
+      max_height = Keyword.fetch!(options, :max_height)
 
       input_size = @input_size
 

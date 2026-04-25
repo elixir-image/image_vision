@@ -560,10 +560,10 @@ if ImageVision.ortex_configured?() do
     end
 
     # Converts raw DETR-panoptic outputs into a list of segments.
-    defp detr_postprocess(logits, pred_masks, id2label, opts) do
-      min_score = Keyword.fetch!(opts, :min_score)
-      orig_w = Keyword.fetch!(opts, :orig_w)
-      orig_h = Keyword.fetch!(opts, :orig_h)
+    defp detr_postprocess(logits, pred_masks, id2label, options) do
+      min_score = Keyword.fetch!(options, :min_score)
+      orig_w = Keyword.fetch!(options, :orig_w)
+      orig_h = Keyword.fetch!(options, :orig_h)
 
       # logits: [1, 100, 251] → numerically-stable softmax, pick top class per query
       query_logits = logits[0]

@@ -71,7 +71,15 @@ defmodule ImageVision.MixProject do
       # --- Tooling ---
       {:ex_doc, "~> 0.18", only: [:release, :dev, :docs]},
       {:dialyxir, "~> 1.4", only: [:dev, :test], runtime: false}
-    ]
+    ] ++ maybe_json_polyfill()
+  end
+
+  defp maybe_json_polyfill do
+    if Code.ensure_loaded?(:json) do
+      []
+    else
+      [{:json_polyfill, "~> 0.2 or ~> 1.0"}]
+    end
   end
 
   defp package do
