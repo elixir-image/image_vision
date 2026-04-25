@@ -81,6 +81,20 @@ jobs:
       - name: Run tests
         run: mix test --exclude ml
 
+      - name: Restore model cache
+        if: matrix.lint
+        uses: actions/cache@v5
+        with:
+          path: |
+            ~/.cache/image_vision
+            ~/.cache/bumblebee
+          key: models-v1-${{ hashFiles('lib/detection.ex', 'lib/segmentation.ex', 'lib/classification.ex') }}
+
+      - name: Run ML tests
+        if: matrix.lint
+        run: mix test --only ml
+        timeout-minutes: 30
+
       - name: Verify hex package builds
         if: matrix.lint
         run: mix hex.build
