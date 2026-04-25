@@ -9,12 +9,12 @@ if ImageVision.ortex_configured?() do
 
     ## Quick start
 
-        iex> street = Image.open!("./test/support/images/street.jpg")
-        iex> [%{label: _, score: _, box: _} | _] = Image.Detection.detect(street)
+        iex> car = Image.open!("./test/support/images/lamborghini-forsennato-concept.jpg")
+        iex> [%{label: _, score: _, box: _} | _] = Image.Detection.detect(car)
 
     ## Default model
 
-    The default is [RT-DETR](https://huggingface.co/PekingU/rtdetr_r50vd) —
+    The default is [RT-DETR](https://huggingface.co/onnx-community/rtdetr_r50vd) —
     a real-time, transformer-based detector that beats YOLOv8 on
     COCO and is **Apache 2.0 licensed** (unlike YOLOv8/11 which are
     AGPL). The ONNX export is hosted at
@@ -117,9 +117,9 @@ if ImageVision.ortex_configured?() do
 
     ### Examples
 
-        iex> street = Image.open!("./test/support/images/street.jpg")
+        iex> car = Image.open!("./test/support/images/lamborghini-forsennato-concept.jpg")
         iex> [%{label: _, score: _, box: _} | _] =
-        ...>   Image.Detection.detect(street, min_score: 0.5)
+        ...>   Image.Detection.detect(car, min_score: 0.5)
 
     """
     @spec detect(image :: Vimage.t(), options :: Keyword.t()) :: [detection()]
@@ -144,20 +144,19 @@ if ImageVision.ortex_configured?() do
     @doc """
     Draws bounding boxes with class labels onto an image.
 
+    Builds an SVG overlay — one box and label per detection — and
+    composites it onto the image. Each distinct class label gets a
+    consistent colour so multiple detections of the same class are
+    easy to identify at a glance.
+
     ### Arguments
 
     * `detections` is the list returned from `detect/2`.
 
     * `image` is the image upon which detection was run.
 
-    ### Options
-
-    * `:stroke_color` is the box outline color. The default is `:red`.
-
-    * `:stroke_width` is the box outline thickness in pixels. The
-      default is `4`.
-
-    * `:font_size` is the label font size. The default is `20`.
+    * `options` is a keyword list of options. Currently unused;
+      accepted for forward compatibility.
 
     ### Returns
 
@@ -165,37 +164,57 @@ if ImageVision.ortex_configured?() do
 
     ### Examples
 
-        iex> street = Image.open!("./test/support/images/street.jpg")
+        iex> car = Image.open!("./test/support/images/lamborghini-forsennato-concept.jpg")
         iex> annotated =
-        ...>   street
+        ...>   car
         ...>   |> Image.Detection.detect()
-        ...>   |> Image.Detection.draw_bbox_with_labels(street)
+        ...>   |> Image.Detection.draw_bbox_with_labels(car)
         iex> match?(%Vix.Vips.Image{}, annotated)
         true
 
     """
     @spec draw_bbox_with_labels([detection()], Vimage.t(), Keyword.t()) :: Vimage.t()
-    def draw_bbox_with_labels(detections, %Vimage{} = image, options \\ []) do
-      stroke_color = Keyword.get(options, :stroke_color, :red)
-      stroke_width = Keyword.get(options, :stroke_width, 4)
-      font_size = Keyword.get(options, :font_size, 20)
+    def draw_bbox_with_labels(detections, %Vimage{} = image, _options \\ []) do
+      width = Image.width(image)
+      height = Image.height(image)
 
-      {width, height, _bands} = Image.shape(image)
+      palette = ~w(
+        #e6194b #3cb44b #4363d8 #f58231 #911eb4
+        #42d4f4 #f032e6 #bfef45 #469990 #9a6324
+      )
 
-      Enum.reduce(detections, image, fn %{label: label, box: {x, y, w, h}}, acc ->
-        {:ok, box_image} =
-          Image.Shape.rect(w, h, stroke_color: stroke_color, stroke_width: stroke_width)
+      label_colors =
+        detections
+        |> Enum.map(& &1.label)
+        |> Enum.uniq()
+        |> Enum.zip(Stream.cycle(palette))
+        |> Map.new()
 
-        {:ok, text_image} =
-          Image.Text.text(label, text_fill_color: stroke_color, font_size: font_size)
+      boxes_svg =
+        Enum.map(detections, fn %{label: label, score: score, box: {x, y, w, h}} ->
+          color = Map.fetch!(label_colors, label)
+          text = "#{label} #{Float.round(score * 100, 1)}%"
+          label_y = max(0, y - 20)
+          label_w = String.length(text) * 8 + 8
 
-        acc
-        |> Image.compose!(box_image, x: x, y: y)
-        |> Image.compose!(text_image,
-          x: min(max(x, 0), width) + 5,
-          y: min(max(y, 0), height) + 5
-        )
-      end)
+          """
+          <rect x="#{x}" y="#{y}" width="#{w}" height="#{h}"
+                fill="none" stroke="#{color}" stroke-width="2"/>
+          <rect x="#{x}" y="#{label_y}" width="#{label_w}" height="20" fill="#{color}"/>
+          <text x="#{x + 4}" y="#{label_y + 14}"
+                font-family="sans-serif" font-size="13" font-weight="bold" fill="white">#{text}</text>
+          """
+        end)
+        |> Enum.join()
+
+      svg = """
+      <svg xmlns="http://www.w3.org/2000/svg" width="#{width}" height="#{height}">
+        #{boxes_svg}
+      </svg>
+      """
+
+      {:ok, overlay} = Image.open(svg, access: :sequential)
+      Image.compose!(image, overlay)
     end
 
     @doc """

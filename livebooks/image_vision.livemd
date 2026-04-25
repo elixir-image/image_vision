@@ -1,0 +1,223 @@
+# Image Vision
+
+```elixir
+Mix.install([
+  {:image_vision, github: "elixir-image/image_vision"},
+  {:kino, "~> 0.14"},
+  # Nx backend required for classification (Bumblebee)
+  {:exla, "~> 0.9"},
+  {:nx, "~> 0.11", override: true},
+  # ONNX runtime required for detection and segmentation
+  {:ortex, "~> 0.1"}
+])
+```
+
+```elixir
+# Start the image classification serving once.
+# Model weights (~110 MB) are downloaded from HuggingFace on first run.
+Nx.global_default_backend(EXLA.Backend)
+
+{:ok, _} =
+  Supervisor.start_link(
+    [Image.Classification.classifier()],
+    strategy: :one_for_one,
+    name: ImageVision.Supervisor
+  )
+```
+
+## Classification
+
+Upload any image and the model returns a ranked list of ImageNet labels with confidence scores. The default model is `facebook/convnext-tiny-224` (Apache 2.0, ~110 MB).
+
+```elixir
+classification_input = Kino.Input.image("Image to classify")
+```
+
+```elixir
+image =
+  classification_input
+  |> Kino.Input.read()
+  |> Image.from_kino!()
+
+predictions =
+  image
+  |> Image.Classification.classify()
+  |> Map.get(:predictions)
+  |> Enum.take(5)
+  |> Enum.map(fn %{label: label, score: score} ->
+    %{"Label" => label, "Confidence" => "#{Float.round(score * 100, 1)}%"}
+  end)
+
+Kino.DataTable.new(predictions)
+```
+
+## Object Detection
+
+Upload an image and the model returns bounding boxes with labels for every recognised object. The default model is `PekingU/rtdetr_v2_r18vd` (RT-DETR v2, Apache 2.0, ~160 MB), which detects 80 COCO object classes.
+
+```elixir
+detection_input = Kino.Input.image("Image for object detection")
+```
+
+```elixir
+image =
+  detection_input
+  |> Kino.Input.read()
+  |> Image.from_kino!()
+
+detections = Image.Detection.detect(image)
+```
+
+```elixir
+# Assign a consistent colour to each label so the overlay is easy to read.
+colours = [
+  "#e6194b", "#3cb44b", "#4363d8", "#f58231", "#911eb4",
+  "#42d4f4", "#f032e6", "#bfef45", "#fabed4", "#469990"
+]
+
+label_colours =
+  detections
+  |> Enum.map(& &1.label)
+  |> Enum.uniq()
+  |> Enum.zip(Stream.cycle(colours))
+  |> Map.new()
+
+width = Image.width(image)
+height = Image.height(image)
+
+# Build an SVG overlay: one rect + label per detection.
+boxes_svg =
+  Enum.map(detections, fn %{label: label, score: score, box: {x, y, w, h}} ->
+    colour = Map.get(label_colours, label, "#ffffff")
+    pct = Float.round(score * 100, 1)
+    text = "#{label} #{pct}%"
+    # Label background sits above the box; clamp to image top.
+    label_y = max(0, trunc(y) - 18)
+
+    """
+    <rect x="#{trunc(x)}" y="#{trunc(y)}" width="#{trunc(w)}" height="#{trunc(h)}"
+          fill="none" stroke="#{colour}" stroke-width="2"/>
+    <rect x="#{trunc(x)}" y="#{label_y}" width="#{String.length(text) * 7 + 6}" height="18"
+          fill="#{colour}" opacity="0.85"/>
+    <text x="#{trunc(x) + 3}" y="#{label_y + 13}"
+          font-family="sans-serif" font-size="13" font-weight="bold" fill="white">#{text}</text>
+    """
+  end)
+  |> Enum.join("\n")
+
+svg = """
+<svg xmlns="http://www.w3.org/2000/svg" width="#{width}" height="#{height}">
+  #{boxes_svg}
+</svg>
+"""
+
+{:ok, overlay} = Image.open(svg, access: :sequential)
+{:ok, result} = Image.compose(image, overlay)
+result
+```
+
+```elixir
+# Summary table of what was detected.
+detections
+|> Enum.map(fn %{label: label, score: score, box: {x, y, w, h}} ->
+  %{
+    "Label" => label,
+    "Confidence" => "#{Float.round(score * 100, 1)}%",
+    "Box (x, y, w, h)" => "#{trunc(x)}, #{trunc(y)}, #{trunc(w)}, #{trunc(h)}"
+  }
+end)
+|> Kino.DataTable.new()
+```
+
+## Segmentation
+
+Segmentation answers "exactly which pixels belong to this object?". We show two modes: **panoptic** (every pixel automatically labelled by class) and **promptable** (you specify a point inside the object you want).
+
+### Panoptic segmentation
+
+The default model is `facebook/detr-resnet-50-panoptic` (Apache 2.0, ~172 MB). It labels every pixel across 133 COCO categories — both things (cat, car) and stuff (sky, grass).
+
+```elixir
+panoptic_input = Kino.Input.image("Image for panoptic segmentation")
+```
+
+```elixir
+image =
+  panoptic_input
+  |> Kino.Input.read()
+  |> Image.from_kino!()
+
+segments = Image.Segmentation.segment_panoptic(image)
+
+# Render a coloured overlay — one colour per segment label.
+{:ok, overlay} = Image.Segmentation.compose_overlay(image, segments)
+
+Kino.Layout.grid(
+  [
+    Kino.Layout.grid([image, Kino.Markdown.new("**Original**")], boxed: true),
+    Kino.Layout.grid([overlay, Kino.Markdown.new("**Panoptic segments**")], boxed: true)
+  ],
+  columns: 2
+)
+```
+
+```elixir
+# Segment summary table.
+segments
+|> Enum.sort_by(& &1.score, :desc)
+|> Enum.map(fn %{label: label, score: score} ->
+  %{"Label" => label, "Score" => "#{Float.round(score * 100, 1)}%"}
+end)
+|> Kino.DataTable.new()
+```
+
+### Promptable segmentation (SAM 2)
+
+The default model is `facebook/sam2.1-hiera-tiny` (Apache 2.0, ~150 MB). Click a point inside the object you want to isolate and SAM 2 returns a precise pixel mask for it.
+
+```elixir
+sam_input = Kino.Input.image("Image for SAM 2 segmentation")
+```
+
+```elixir
+image =
+  sam_input
+  |> Kino.Input.read()
+  |> Image.from_kino!()
+
+width = Image.width(image)
+height = Image.height(image)
+
+# Use a Kino point picker or hard-code a prompt point.
+# Replace {cx, cy} with the pixel coordinates of the object you want to isolate.
+cx = div(width, 2)
+cy = div(height, 2)
+
+%{mask: mask, score: score} =
+  Image.Segmentation.segment(image, prompt: {:point, cx, cy})
+
+IO.puts("Mask score: #{Float.round(score, 3)}")
+
+# Apply the mask as an alpha channel so only the segmented object is visible.
+{:ok, cutout} = Image.Segmentation.apply_mask(image, mask)
+
+# Build an SVG to mark the prompt point on the original image.
+point_svg = """
+<svg xmlns="http://www.w3.org/2000/svg" width="#{width}" height="#{height}">
+  <circle cx="#{cx}" cy="#{cy}" r="8" fill="#ff0" stroke="#000" stroke-width="2"/>
+  <circle cx="#{cx}" cy="#{cy}" r="3" fill="#000"/>
+</svg>
+"""
+
+{:ok, point_overlay} = Image.open(point_svg, access: :sequential)
+{:ok, annotated} = Image.compose(image, point_overlay)
+
+Kino.Layout.grid(
+  [
+    Kino.Layout.grid([annotated, Kino.Markdown.new("**Prompt point**")], boxed: true),
+    Kino.Layout.grid([mask, Kino.Markdown.new("**Predicted mask**")], boxed: true),
+    Kino.Layout.grid([cutout, Kino.Markdown.new("**Cutout**")], boxed: true)
+  ],
+  columns: 3
+)
+```

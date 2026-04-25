@@ -245,7 +245,7 @@ if ImageVision.ortex_configured?() do
 
     ### Examples
 
-        iex> image = Image.open!("./test/support/images/street.jpg")
+        iex> image = Image.open!("./test/support/images/puppy.webp")
         iex> segments = Image.Segmentation.segment_panoptic(image)
         iex> is_list(segments)
         true
@@ -345,7 +345,7 @@ if ImageVision.ortex_configured?() do
 
     ### Examples
 
-        iex> image = Image.open!("./test/support/images/street.jpg")
+        iex> image = Image.open!("./test/support/images/puppy.webp")
         iex> segments = Image.Segmentation.segment_panoptic(image)
         iex> overlay = Image.Segmentation.compose_overlay(image, segments)
         iex> match?(%Vix.Vips.Image{}, overlay)

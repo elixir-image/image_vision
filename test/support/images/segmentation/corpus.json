@@ -1,0 +1,192 @@
+[
+  {
+    "file": "pet_Abyssinian_202.jpg",
+    "mask_file": "pet_Abyssinian_202_mask.png",
+    "width": 300,
+    "height": 225,
+    "breed": "Abyssinian",
+    "coco_class": "cat",
+    "prompt_point": [
+      170,
+      116
+    ],
+    "prompt_box": [
+      114,
+      22,
+      114,
+      177
+    ],
+    "foreground_pixels": 9626
+  },
+  {
+    "file": "pet_basset_hound_50.jpg",
+    "mask_file": "pet_basset_hound_50_mask.png",
+    "width": 500,
+    "height": 332,
+    "breed": "basset_hound",
+    "coco_class": "dog",
+    "prompt_point": [
+      255,
+      196
+    ],
+    "prompt_box": [
+      106,
+      68,
+      328,
+      249
+    ],
+    "foreground_pixels": 41611
+  },
+  {
+    "file": "pet_Bombay_48.jpg",
+    "mask_file": "pet_Bombay_48_mask.png",
+    "width": 334,
+    "height": 431,
+    "breed": "Bombay",
+    "coco_class": "cat",
+    "prompt_point": [
+      181,
+      231
+    ],
+    "prompt_box": [
+      69,
+      67,
+      213,
+      311
+    ],
+    "foreground_pixels": 28566
+  },
+  {
+    "file": "pet_chihuahua_75.jpg",
+    "mask_file": "pet_chihuahua_75_mask.png",
+    "width": 500,
+    "height": 375,
+    "breed": "chihuahua",
+    "coco_class": "dog",
+    "prompt_point": [
+      322,
+      224
+    ],
+    "prompt_box": [
+      148,
+      5,
+      351,
+      369
+    ],
+    "foreground_pixels": 75221
+  },
+  {
+    "file": "pet_german_shorthaired_58.jpg",
+    "mask_file": "pet_german_shorthaired_58_mask.png",
+    "width": 500,
+    "height": 400,
+    "breed": "german_shorthaired",
+    "coco_class": "dog",
+    "prompt_point": [
+      337,
+      210
+    ],
+    "prompt_box": [
+      230,
+      101,
+      207,
+      208
+    ],
+    "foreground_pixels": 12214
+  },
+  {
+    "file": "pet_keeshond_47.jpg",
+    "mask_file": "pet_keeshond_47_mask.png",
+    "width": 500,
+    "height": 375,
+    "breed": "keeshond",
+    "coco_class": "dog",
+    "prompt_point": [
+      263,
+      167
+    ],
+    "prompt_box": [
+      51,
+      19,
+      402,
+      322
+    ],
+    "foreground_pixels": 69401
+  },
+  {
+    "file": "pet_newfoundland_54.jpg",
+    "mask_file": "pet_newfoundland_54_mask.png",
+    "width": 500,
+    "height": 333,
+    "breed": "newfoundland",
+    "coco_class": "dog",
+    "prompt_point": [
+      246,
+      193
+    ],
+    "prompt_box": [
+      87,
+      21,
+      284,
+      311
+    ],
+    "foreground_pixels": 64718
+  },
+  {
+    "file": "pet_Ragdoll_224.jpg",
+    "mask_file": "pet_Ragdoll_224_mask.png",
+    "width": 202,
+    "height": 300,
+    "breed": "Ragdoll",
+    "coco_class": "cat",
+    "prompt_point": [
+      119,
+      170
+    ],
+    "prompt_box": [
+      13,
+      22,
+      188,
+      269
+    ],
+    "foreground_pixels": 38116
+  },
+  {
+    "file": "pet_samoyed_42.jpg",
+    "mask_file": "pet_samoyed_42_mask.png",
+    "width": 500,
+    "height": 333,
+    "breed": "samoyed",
+    "coco_class": "dog",
+    "prompt_point": [
+      244,
+      193
+    ],
+    "prompt_box": [
+      155,
+      58,
+      188,
+      265
+    ],
+    "foreground_pixels": 30336
+  },
+  {
+    "file": "pet_Siamese_96.jpg",
+    "mask_file": "pet_Siamese_96_mask.png",
+    "width": 500,
+    "height": 379,
+    "breed": "Siamese",
+    "coco_class": "cat",
+    "prompt_point": [
+      226,
+      195
+    ],
+    "prompt_box": [
+      44,
+      29,
+      327,
+      310
+    ],
+    "foreground_pixels": 61242
+  }
+]
