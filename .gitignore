@@ -41,3 +41,7 @@ test/perf/*.jpeg
 # ML model
 *.pt
 *.onnx
+
+# Tools
+mise.toml
+.tool-versions

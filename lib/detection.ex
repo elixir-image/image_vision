@@ -266,15 +266,11 @@ if ImageVision.ortex_configured?() do
 
       padded = Image.embed!(resized, @input_size, @input_size, x: 0, y: 0)
 
-      mean = Nx.tensor([0.485, 0.456, 0.406])
-      std = Nx.tensor([0.229, 0.224, 0.225])
-
       tensor =
         padded
-        |> Image.to_nx!()
+        |> Image.to_nx!(backend: Nx.BinaryBackend)
         |> Nx.as_type(:f32)
         |> Nx.divide(255.0)
-        |> NxImage.normalize(mean, std)
         |> Nx.transpose(axes: [2, 0, 1])
         |> Nx.new_axis(0)
 
@@ -297,8 +293,12 @@ if ImageVision.ortex_configured?() do
       original_height = Keyword.fetch!(opts, :original_height)
       min_score = Keyword.fetch!(opts, :min_score)
 
-      scores = Nx.sigmoid(logits[0])
-      boxes = pred_boxes[0]
+      scores =
+        logits[0]
+        |> Nx.backend_transfer(Nx.BinaryBackend)
+        |> Nx.sigmoid()
+
+      boxes = pred_boxes[0] |> Nx.backend_transfer(Nx.BinaryBackend)
 
       best_class = Nx.argmax(scores, axis: 1)
       best_score = Nx.reduce_max(scores, axes: [1])

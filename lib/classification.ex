@@ -157,7 +157,6 @@ if ImageVision.bumblebee_configured?() do
     @spec classifier(configuration :: Keyword.t()) ::
             {Nx.Serving, Keyword.t()} | {:error, Image.error()}
     def classifier(classifier \\ Application.get_env(:image_vision, :classifier, [])) do
-      Application.ensure_all_started(:exla)
       classifier = Keyword.merge(@default_classifier, classifier)
 
       model = Keyword.fetch!(classifier, :model)
@@ -224,7 +223,6 @@ if ImageVision.bumblebee_configured?() do
     @spec embedder(configuration :: Keyword.t()) ::
             {Nx.Serving, Keyword.t()} | {:error, Image.error()}
     def embedder(embedder \\ Application.get_env(:image_vision, :embedder, [])) do
-      Application.ensure_all_started(:exla)
       embedder = Keyword.merge(@default_embedder, embedder)
 
       model = Keyword.fetch!(embedder, :model)
@@ -256,7 +254,7 @@ if ImageVision.bumblebee_configured?() do
            {:ok, featurizer} = Bumblebee.load_featurizer(featurizer, featurizer_options) do
         Bumblebee.Vision.image_classification(model_info, featurizer,
           compile: [batch_size: batch_size],
-          defn_options: [compiler: EXLA]
+          defn_options: defn_options()
         )
       end
     end
@@ -267,8 +265,20 @@ if ImageVision.bumblebee_configured?() do
            {:ok, featurizer} = Bumblebee.load_featurizer(featurizer, featurizer_options) do
         Bumblebee.Vision.image_embedding(model_info, featurizer,
           compile: [batch_size: batch_size],
-          defn_options: [compiler: EXLA]
+          defn_options: defn_options()
         )
+      end
+    end
+
+    # Use EXLA as the Nx compiler when it is properly loaded and implements
+    # the current Nx.Defn.Compiler protocol. Falls back to the default
+    # evaluator when EXLA is absent or version-mismatched (e.g. EXLA 0.10
+    # paired with Nx 0.11 does not export __compile__/4).
+    defp defn_options do
+      if Code.ensure_loaded?(EXLA) and function_exported?(EXLA, :__compile__, 4) do
+        [compiler: EXLA]
+      else
+        []
       end
     end
 

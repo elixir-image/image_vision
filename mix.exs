@@ -75,6 +75,7 @@ defmodule ImageVision.MixProject do
       {:nx, "~> 0.11", optional: true, override: true},
       {:nx_image, "~> 0.1", optional: true},
       {:bumblebee, "~> 0.6", optional: true},
+      {:exla, "~> 0.11", optional: true},
 
       # --- Tooling ---
       {:ex_doc, "~> 0.18", only: [:release, :dev, :docs]},

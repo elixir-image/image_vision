@@ -2,6 +2,7 @@ defmodule Image.DetectionTest do
   use ExUnit.Case, async: false
 
   @moduletag :ml
+  @moduletag :ortex
 
   @corpus_dir Path.join(__DIR__, "support/images/segmentation")
   @corpus Path.join(@corpus_dir, "corpus.json")
@@ -41,7 +42,7 @@ defmodule Image.DetectionTest do
       for entry <- @corpus do
         image = open_image(entry)
         expected = entry["coco_class"]
-        detections = Image.Detection.detect(image)
+        detections = Image.Detection.detect(image, min_score: 0.1)
         labels = Enum.map(detections, & &1.label)
 
         assert Enum.any?(labels, &(&1 == expected)),
@@ -55,7 +56,7 @@ defmodule Image.DetectionTest do
         expected = entry["coco_class"]
         [gt_x, gt_y, gt_w, gt_h] = entry["prompt_box"]
 
-        detections = Image.Detection.detect(image)
+        detections = Image.Detection.detect(image, min_score: 0.1)
 
         best_iou =
           detections

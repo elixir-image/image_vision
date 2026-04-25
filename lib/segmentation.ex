@@ -180,7 +180,7 @@ if ImageVision.ortex_configured?() do
 
       orig_w = Image.width(image)
       orig_h = Image.height(image)
-      input_scale = @sam_input_size / max(orig_w, orig_h)
+      input_scale = max(orig_w, orig_h) / @sam_input_size
 
       {point_coords, point_labels} =
         encode_sam_prompt(prompt, orig_w, orig_h, input_scale)
@@ -265,13 +265,13 @@ if ImageVision.ortex_configured?() do
       orig_w = Image.width(image)
       orig_h = Image.height(image)
 
-      {batch, input_h, input_w} = detr_preprocess(image)
+      {batch, _input_h, _input_w} = detr_preprocess(image)
 
       {logits, _pred_boxes, pred_masks} = Ortex.run(model, batch)
+      logits = Nx.backend_transfer(logits, Nx.BinaryBackend)
+      pred_masks = Nx.backend_transfer(pred_masks, Nx.BinaryBackend)
 
       detr_postprocess(logits, pred_masks, id2label,
-        input_h: input_h,
-        input_w: input_w,
         orig_w: orig_w,
         orig_h: orig_h,
         min_score: min_score
@@ -413,7 +413,7 @@ if ImageVision.ortex_configured?() do
 
       tensor =
         padded
-        |> Image.to_nx!()
+        |> Image.to_nx!(backend: Nx.BinaryBackend)
         |> Nx.as_type(:f32)
         |> Nx.divide(255.0)
         |> NxImage.normalize(Nx.tensor(@imagenet_mean), Nx.tensor(@imagenet_std))
@@ -424,16 +424,17 @@ if ImageVision.ortex_configured?() do
     end
 
     defp sam_encode(encoder, tensor) do
-      {image_embed, high_res_feats_0, high_res_feats_1} = Ortex.run(encoder, tensor)
+      # Model outputs in order: high_res_feats_0, high_res_feats_1, image_embed
+      {high_res_feats_0, high_res_feats_1, image_embed} = Ortex.run(encoder, tensor)
       {image_embed, high_res_feats_0, high_res_feats_1}
     end
 
     # Converts a user prompt into SAM point_coords + point_labels tensors.
     # Coords are in the 1024×1024 input space.
-    defp encode_sam_prompt(:auto, orig_w, orig_h, _input_scale) do
+    defp encode_sam_prompt(:auto, orig_w, orig_h, input_scale) do
       cx = orig_w / 2
       cy = orig_h / 2
-      encode_sam_prompt({:point, cx, cy}, orig_w, orig_h, orig_w / @sam_input_size)
+      encode_sam_prompt({:point, cx, cy}, orig_w, orig_h, input_scale)
     end
 
     defp encode_sam_prompt({:point, x, y}, _orig_w, _orig_h, scale) do
@@ -469,7 +470,7 @@ if ImageVision.ortex_configured?() do
       mask_input = Nx.broadcast(Nx.tensor(0, type: :f32), {1, 1, 256, 256})
       has_mask = Nx.tensor([0], type: :f32)
 
-      {masks, iou_predictions, _low_res} =
+      {masks, iou_predictions} =
         Ortex.run(decoder, {
           image_embed,
           high_res_feats_0,
@@ -480,29 +481,33 @@ if ImageVision.ortex_configured?() do
           has_mask
         })
 
-      {masks, iou_predictions}
+      {
+        Nx.backend_transfer(masks, Nx.BinaryBackend),
+        Nx.backend_transfer(iou_predictions, Nx.BinaryBackend)
+      }
     end
 
-    # Converts a SAM output mask tensor [256, 256] (logits) to a
+    # Converts a SAM output mask tensor {256, 256} (logits) to a
     # single-band Vimage at original image dimensions.
     defp sam_mask_to_image(mask_tensor, orig_w, orig_h, resized_w, resized_h) do
-      # Up to the padded 1024×1024 input, then crop to the valid region,
-      # then resize to original dimensions.
-      upscaled =
-        mask_tensor
-        |> Nx.reshape({1024, 1024, 1})
-        |> Nx.slice([0, 0, 0], [resized_h, resized_w, 1])
+      # The 256×256 mask covers the full 1024×1024 padded input space.
+      # Crop to the valid region, which is resized_w×resized_h in input
+      # space, scaled to mask space by the factor 256/1024 = 1/4.
+      valid_h = round(resized_h * 256 / @sam_input_size)
+      valid_w = round(resized_w * 256 / @sam_input_size)
 
-      # Threshold at 0 (logits > 0 → object)
       binary =
-        upscaled
+        mask_tensor
+        |> Nx.slice([0, 0], [valid_h, valid_w])
         |> Nx.greater(0)
         |> Nx.multiply(255)
         |> Nx.as_type(:u8)
+        |> Nx.transpose()
+        |> Nx.new_axis(2)
 
       binary
       |> Image.from_nx!()
-      |> Image.resize!(orig_w / resized_w, vertical_scale: orig_h / resized_h)
+      |> Image.resize!(orig_w / valid_w, vertical_scale: orig_h / valid_h)
     end
 
     # --- Private: DETR-panoptic pre/post --------------------------------
@@ -525,14 +530,15 @@ if ImageVision.ortex_configured?() do
 
       tensor =
         resized
-        |> Image.to_nx!()
+        |> Image.to_nx!(backend: Nx.BinaryBackend)
         |> Nx.as_type(:f32)
         |> Nx.divide(255.0)
         |> NxImage.normalize(Nx.tensor(@imagenet_mean), Nx.tensor(@imagenet_std))
         |> Nx.transpose(axes: [2, 0, 1])
         |> Nx.new_axis(0)
 
-      {tensor, input_h, input_w}
+      pixel_mask = Nx.broadcast(Nx.tensor(1, type: :s64), {1, 64, 64})
+      {{tensor, pixel_mask}, input_h, input_w}
     end
 
     # Loads id2label from config.json; cached in :persistent_term.
@@ -556,8 +562,6 @@ if ImageVision.ortex_configured?() do
     # Converts raw DETR-panoptic outputs into a list of segments.
     defp detr_postprocess(logits, pred_masks, id2label, opts) do
       min_score = Keyword.fetch!(opts, :min_score)
-      input_h = Keyword.fetch!(opts, :input_h)
-      input_w = Keyword.fetch!(opts, :input_w)
       orig_w = Keyword.fetch!(opts, :orig_w)
       orig_h = Keyword.fetch!(opts, :orig_h)
 
@@ -578,9 +582,8 @@ if ImageVision.ortex_configured?() do
       class_list = Nx.to_flat_list(best_class)
       score_list = Nx.to_flat_list(best_score)
 
-      # pred_masks: [1, 100, H/4, W/4]
-      mask_h = div(input_h, 4)
-      mask_w = div(input_w, 4)
+      # pred_masks: [1, queries, H/4, W/4]
+      {1, _num_queries, mask_h, mask_w} = Nx.shape(pred_masks)
 
       Enum.zip(class_list, score_list)
       |> Enum.with_index()
@@ -591,11 +594,12 @@ if ImageVision.ortex_configured?() do
 
           mask =
             mask_tensor
-            |> Nx.reshape({mask_h, mask_w, 1})
             |> Nx.sigmoid()
             |> Nx.greater(0.5)
             |> Nx.multiply(255)
             |> Nx.as_type(:u8)
+            |> Nx.transpose()
+            |> Nx.new_axis(2)
             |> Image.from_nx!()
             |> Image.resize!(orig_w / mask_w, vertical_scale: orig_h / mask_h)
 

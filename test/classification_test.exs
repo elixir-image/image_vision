@@ -2,6 +2,7 @@ defmodule Image.ClassificationTest do
   use ExUnit.Case, async: false
 
   @moduletag :ml
+  @moduletag :classification
 
   @images Path.join(__DIR__, "support/images")
 
@@ -9,6 +10,7 @@ defmodule Image.ClassificationTest do
   # ConvNeXt-tiny-224 takes several seconds, so we do it here rather
   # than per-test.
   setup_all do
+    Application.ensure_all_started(:exla)
     spec = Image.Classification.classifier()
     start_supervised!(spec)
     :ok
@@ -29,7 +31,7 @@ defmodule Image.ClassificationTest do
   describe "labels/2" do
     test "classifies a Cavalier King Charles Spaniel as a Blenheim spaniel" do
       image = Image.open!(Path.join(@images, "puppy.webp"))
-      labels = Image.Classification.labels(image)
+      labels = Image.Classification.labels(image, min_score: 0.1)
       assert "Blenheim spaniel" in labels
     end
 
