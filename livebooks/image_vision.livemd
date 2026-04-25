@@ -1,29 +1,29 @@
 # Image Vision
 
 ```elixir
-Mix.install([
-  {:image_vision, github: "elixir-image/image_vision"},
-  {:kino, "~> 0.14"},
-  # Required for classification (Bumblebee servings).
-  {:bumblebee, "~> 0.6"},
-  {:nx, "~> 0.10"},
-  {:exla, "~> 0.10"},
-  # Required for detection and segmentation (ONNX runtime).
-  {:ortex, "~> 0.1"}
-])
+Mix.install(
+  [
+    {:image_vision, github: "elixir-image/image_vision"},
+    {:kino, "~> 0.14"},
+    # Required for classification (Bumblebee servings).
+    {:bumblebee, "~> 0.6"},
+    {:nx, "~> 0.10"},
+    {:exla, "~> 0.10"},
+    # Required for detection and segmentation (ONNX runtime).
+    {:ortex, "~> 0.1"}
+  ],
+  config: [
+    # Tell ImageVision.Application to start the classification serving
+    # under its own supervisor. Classifier weights (~110 MB) download
+    # from HuggingFace on first run.
+    image_vision: [classifier: [autostart: true]]
+  ]
+)
 ```
 
 ```elixir
-# Start the image classification serving once.
-# Model weights (~110 MB) are downloaded from HuggingFace on first run.
+# Use EXLA as the Nx backend for any tensor work in this notebook.
 Nx.global_default_backend(EXLA.Backend)
-
-{:ok, _} =
-  Supervisor.start_link(
-    [Image.Classification.classifier()],
-    strategy: :one_for_one,
-    name: ImageVision.Supervisor
-  )
 ```
 
 ## Classification

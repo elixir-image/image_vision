@@ -48,3 +48,8 @@ mise.toml
 
 # Builds
 *.tar
+
+# Claude
+CLAUDE.md
+.claude/
+
