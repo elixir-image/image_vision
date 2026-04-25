@@ -61,8 +61,7 @@ defmodule ImageVision.MixProject do
       # These are declared `optional: true` so downstream consumers
       # must opt in explicitly. `image_vision` itself does not pull
       # them into the dependency graph, letting applications choose
-      # their preferred backend (EXLA for CPU/GPU, etc.) and their
-      # own Bumblebee version.
+      # their preferred backend and Bumblebee version.
       #
       # * Segmentation (`Image.Segmentation`) and object detection
       #   (`Image.Detection`) run ONNX models via Ortex.
@@ -70,11 +69,12 @@ defmodule ImageVision.MixProject do
       #
       # * Classification (`Image.Classification`) and embedding
       #   (`Image.Classification.embed/2`) use Bumblebee servings.
-      #   Users must separately add `:exla` (or another Nx compiler)
-      #   to their own `mix.exs` for the actual Nx backend at runtime.
+      #   Users must separately add an Nx compiler to their own `mix.exs`.
       {:nx, "~> 0.11", optional: true, override: true},
       {:nx_image, "~> 0.1", optional: true},
       {:bumblebee, "~> 0.6", optional: true},
+      # EXLA provides XLA-backed Nx.Defn compilation. Works on all
+      # platforms including Apple Silicon (via XLA's CPU/NEON/AMX path).
       {:exla, "~> 0.11", optional: true},
 
       # --- Tooling ---
