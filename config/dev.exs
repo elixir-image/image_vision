@@ -5,4 +5,3 @@ config :nx,
 
 config :logger,
   level: :warning
-

@@ -84,7 +84,7 @@ defmodule Image.SegmentationTest do
       median = ious |> Enum.sort() |> Enum.at(div(length(ious), 2))
 
       assert median > 0.1,
-             "median IoU across corpus is #{Float.round(median, 3)} — expected > 0.1 (per-image: #{inspect Enum.map(ious, &Float.round(&1, 3))})"
+             "median IoU across corpus is #{Float.round(median, 3)} — expected > 0.1 (per-image: #{inspect(Enum.map(ious, &Float.round(&1, 3)))})"
     end
   end
 

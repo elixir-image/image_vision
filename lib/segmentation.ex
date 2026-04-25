@@ -186,7 +186,11 @@ if ImageVision.ortex_configured?() do
         encode_sam_prompt(prompt, orig_w, orig_h, input_scale)
 
       {masks_raw, iou_preds} =
-        sam_decode(decoder, image_embed, high_res_feats_0, high_res_feats_1,
+        sam_decode(
+          decoder,
+          image_embed,
+          high_res_feats_0,
+          high_res_feats_1,
           point_coords,
           point_labels
         )
@@ -463,7 +467,11 @@ if ImageVision.ortex_configured?() do
       {coords, labels}
     end
 
-    defp sam_decode(decoder, image_embed, high_res_feats_0, high_res_feats_1,
+    defp sam_decode(
+           decoder,
+           image_embed,
+           high_res_feats_0,
+           high_res_feats_1,
            point_coords,
            point_labels
          ) do

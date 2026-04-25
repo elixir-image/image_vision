@@ -69,7 +69,7 @@ if ImageVision.ortex_configured?() do
       keyboard cell_phone microwave oven toaster sink refrigerator
       book clock vase scissors teddy_bear hair_drier toothbrush
     )
-    |> Enum.map(&String.replace(&1, "_", " "))
+                  |> Enum.map(&String.replace(&1, "_", " "))
 
     @typedoc """
     A single detected object.

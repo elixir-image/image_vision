@@ -103,7 +103,8 @@ defmodule ImageVision.MixProject do
     %{
       "GitHub" => "https://github.com/elixir-image/image_vision",
       "Readme" => "https://github.com/elixir-image/image_vision/blob/v#{@version}/README.md",
-      "Changelog" => "https://github.com/elixir-image/image_vision/blob/v#{@version}/CHANGELOG.md",
+      "Changelog" =>
+        "https://github.com/elixir-image/image_vision/blob/v#{@version}/CHANGELOG.md",
       "image" => "https://hex.pm/packages/image",
       "libvips" => "https://www.libvips.org"
     }

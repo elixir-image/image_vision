@@ -19,6 +19,7 @@ defmodule Image.ClassificationTest do
   describe "classify/2" do
     test "returns a predictions map with label and score keys" do
       image = Image.open!(Path.join(@images, "puppy.webp"))
+
       assert %{predictions: [%{label: label, score: score} | _rest]} =
                Image.Classification.classify(image)
 
