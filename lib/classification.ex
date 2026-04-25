@@ -270,11 +270,8 @@ if ImageVision.bumblebee_configured?() do
       end
     end
 
-    # Use EXLA as the Nx compiler when it is properly loaded and implements
-    # the current Nx.Defn.Compiler protocol. Falls back to the configured
-    # default (or Nx.Defn.Evaluator) when EXLA is absent or mismatched.
     defp defn_options do
-      if Code.ensure_loaded?(EXLA) and function_exported?(EXLA, :__compile__, 4) do
+      if Code.ensure_loaded?(EXLA) do
         [compiler: EXLA]
       else
         []

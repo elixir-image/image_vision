@@ -45,7 +45,7 @@ defmodule ImageVision.MixProject do
   defp deps do
     [
       # The core image-processing library.
-      {:image, "~> 0.65"},
+      {:image, "~> 0.66"},
 
       # Used to download ONNX model weights on first call.
       {:req, "~> 0.5"},
@@ -56,26 +56,17 @@ defmodule ImageVision.MixProject do
       # branch compiles cleanly. Remove once `:color` upstream is fixed.
       {:plug, "~> 1.15", optional: true},
 
-      # --- Optional ML deps ---
+      # --- ML deps ---
       #
-      # These are declared `optional: true` so downstream consumers
-      # must opt in explicitly. `image_vision` itself does not pull
-      # them into the dependency graph, letting applications choose
-      # their preferred backend and Bumblebee version.
-      #
-      # * Segmentation (`Image.Segmentation`) and object detection
-      #   (`Image.Detection`) run ONNX models via Ortex.
+      # Segmentation and detection run ONNX models via Ortex.
       {:ortex, "~> 0.1", optional: true},
       #
-      # * Classification (`Image.Classification`) and embedding
-      #   (`Image.Classification.embed/2`) use Bumblebee servings.
-      #   Users must separately add an Nx compiler to their own `mix.exs`.
-      {:nx, "~> 0.11", optional: true, override: true},
-      {:nx_image, "~> 0.1", optional: true},
+      # Classification and embedding use Bumblebee servings.
       {:bumblebee, "~> 0.6", optional: true},
-      # EXLA provides XLA-backed Nx.Defn compilation. Works on all
-      # platforms including Apple Silicon (via XLA's CPU/NEON/AMX path).
-      {:exla, "~> 0.11", optional: true},
+      #
+      # Nx and EXLA are required for inference.
+      {:nx, "~> 0.10.0"},
+      {:exla, "~> 0.10"},
 
       # --- Tooling ---
       {:ex_doc, "~> 0.18", only: [:release, :dev, :docs]},
@@ -91,6 +82,7 @@ defmodule ImageVision.MixProject do
       files: [
         "lib",
         "priv",
+        "guides",
         "mix.exs",
         "README*",
         "CHANGELOG*",

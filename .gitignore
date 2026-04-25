@@ -45,3 +45,6 @@ test/perf/*.jpeg
 # Tools
 mise.toml
 .tool-versions
+
+# Builds
+*.tar
