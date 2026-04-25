@@ -151,7 +151,7 @@ image =
 segments = Image.Segmentation.segment_panoptic(image)
 
 # Render a coloured overlay — one colour per segment label.
-{:ok, overlay} = Image.Segmentation.compose_overlay(image, segments)
+overlay = Image.Segmentation.compose_overlay(image, segments)
 
 Kino.Layout.grid(
   [

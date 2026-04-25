@@ -510,8 +510,8 @@ if ImageVision.ortex_configured?() do
         |> Nx.greater(0)
         |> Nx.multiply(255)
         |> Nx.as_type(:u8)
-        |> Nx.transpose()
         |> Nx.new_axis(2)
+        |> Nx.rename([:height, :width, :bands])
 
       binary
       |> Image.from_nx!()
@@ -606,8 +606,8 @@ if ImageVision.ortex_configured?() do
             |> Nx.greater(0.5)
             |> Nx.multiply(255)
             |> Nx.as_type(:u8)
-            |> Nx.transpose()
             |> Nx.new_axis(2)
+            |> Nx.rename([:height, :width, :bands])
             |> Image.from_nx!()
             |> Image.resize!(orig_w / mask_w, vertical_scale: orig_h / mask_h)
 
