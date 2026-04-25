@@ -43,7 +43,7 @@ Add `:image_vision` to `mix.exs` along with whichever optional ML backends you n
 ```elixir
 def deps do
   [
-    {:image_vision, "~> 0.2"},
+    {:image_vision, "~> 0.1"},
 
     # Required for Image.Classification and Image.Classification.embed/2
     {:bumblebee, "~> 0.6"},
@@ -177,6 +177,6 @@ config :image_vision, :classifier,
 
 ## Guides
 
-- [Classification](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/classification.md) — classifying images and computing embeddings
-- [Detection](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/detection.md) — bounding-box object detection
-- [Segmentation](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/segmentation.md) — promptable and panoptic segmentation
+- [Classification](https://github.com/elixir-image/image_vision/blob/v0.1.0/guides/classification.md) — classifying images and computing embeddings
+- [Detection](https://github.com/elixir-image/image_vision/blob/v0.1.0/guides/detection.md) — bounding-box object detection
+- [Segmentation](https://github.com/elixir-image/image_vision/blob/v0.1.0/guides/segmentation.md) — promptable and panoptic segmentation

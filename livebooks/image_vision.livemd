@@ -14,7 +14,7 @@
 ```elixir
 Mix.install(
   [
-    {:image_vision, github: "elixir-image/image_vision"},
+    {:image_vision, "~> 0.1"},
     {:kino, "~> 0.14"},
     # Required for classification (Bumblebee servings).
     {:bumblebee, "~> 0.6"},
