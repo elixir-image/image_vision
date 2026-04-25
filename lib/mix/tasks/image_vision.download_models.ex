@@ -1,4 +1,4 @@
-defmodule Mix.Tasks.ImageVision.Download do
+defmodule Mix.Tasks.ImageVision.DownloadModels do
   @shortdoc "Pre-downloads ImageVision default models into the local cache"
 
   @moduledoc """
@@ -19,9 +19,9 @@ defmodule Mix.Tasks.ImageVision.Download do
 
   ## Usage
 
-      mix image_vision.download
-      mix image_vision.download --classify
-      mix image_vision.download --segment --detect
+      mix image_vision.download_models
+      mix image_vision.download_models --classify
+      mix image_vision.download_models --segment --detect
 
   ## Configuration
 
