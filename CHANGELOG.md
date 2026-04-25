@@ -2,8 +2,6 @@
 
 ## ImageVision v0.1.0
 
-Initial release of `image_vision`. The library was originally planned as `image_detection`, but the scope grew to cover classification, segmentation, and object detection — so it was renamed before any version was published. There is no prior published release under either name.
-
 `image_vision` is a thin, opinionated wrapper around the Elixir ML ecosystem (Bumblebee, Ortex, Nx) that sits next to the [`image`](https://hex.pm/packages/image) library. It exposes three vision tasks through a small API designed for developers who are not ML experts: pass a `t:Vix.Vips.Image.t/0` in, get useful results out. Strong, permissively-licensed defaults handle model selection, backend configuration, and weight downloads automatically.
 
 ### Highlights
