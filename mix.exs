@@ -28,10 +28,11 @@ defmodule ImageVision.MixProject do
 
   defp description do
     """
-    Simple image classification, segmentation, and object detection
-    for the `image` library. Powered by Bumblebee (classification,
-    embeddings) and Ortex (segmentation, detection) — strong defaults,
-    no ML expertise required.
+    Simple image classification, embedding, object detection,
+    segmentation, background removal, captioning, and zero-shot
+    classification for the `image` library. Powered by Bumblebee and
+    Ortex with strong, permissively-licensed defaults — no ML
+    expertise required.
     """
   end
 
@@ -89,7 +90,6 @@ defmodule ImageVision.MixProject do
       links: links(),
       files: [
         "lib",
-        "priv",
         "guides",
         "logo.jpg",
         "mix.exs",
