@@ -89,7 +89,7 @@ If you see Cargo or `cc` errors during `mix deps.compile`, you've likely landed 
 
 ### Disk space and first-call latency
 
-Model weights are downloaded on first call and cached on disk. Across all three default models the total is approximately:
+Model weights are downloaded on first call and cached on disk. Across all default models the total is approximately:
 
 | Task | Default model | Size |
 |---|---|---|
@@ -147,6 +147,9 @@ All models are permissively licensed. Weights are downloaded automatically on fi
 | Object detection | [`onnx-community/rtdetr_r50vd`](https://huggingface.co/onnx-community/rtdetr_r50vd) | Apache 2.0 | ~175 MB |
 | Promptable segmentation | [`SharpAI/sam2-hiera-tiny-onnx`](https://huggingface.co/SharpAI/sam2-hiera-tiny-onnx) | Apache 2.0 | ~150 MB |
 | Panoptic segmentation | [`Xenova/detr-resnet-50-panoptic`](https://huggingface.co/Xenova/detr-resnet-50-panoptic) | Apache 2.0 | ~175 MB |
+| Background removal | [`onnx-community/BiRefNet_lite-ONNX`](https://huggingface.co/onnx-community/BiRefNet_lite-ONNX) | MIT | ~210 MB |
+| Captioning | [`Salesforce/blip-image-captioning-base`](https://huggingface.co/Salesforce/blip-image-captioning-base) | BSD-3-Clause | ~990 MB |
+| Zero-shot classification | [`openai/clip-vit-base-patch32`](https://huggingface.co/openai/clip-vit-base-patch32) | MIT | ~605 MB |
 
 ## Configuration
 
