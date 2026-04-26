@@ -69,7 +69,10 @@ defmodule Image.ZeroShotTest do
 
     test "template: nil uses labels verbatim" do
       image = Image.open!(Path.join(@images, "puppy.webp"))
-      results = Image.ZeroShot.classify(image, ["a photo of a dog", "a photo of a car"], template: nil)
+
+      results =
+        Image.ZeroShot.classify(image, ["a photo of a dog", "a photo of a car"], template: nil)
+
       assert [%{label: "a photo of a dog"} | _] = results
     end
   end

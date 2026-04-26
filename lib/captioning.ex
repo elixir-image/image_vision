@@ -179,8 +179,7 @@ if ImageVision.bumblebee_configured?() do
             defn_options: defn_options()
           )
 
-        {Nx.Serving,
-         serving: serving, name: configuration[:name], batch_timeout: 100}
+        {Nx.Serving, serving: serving, name: configuration[:name], batch_timeout: 100}
       end
     end
 
