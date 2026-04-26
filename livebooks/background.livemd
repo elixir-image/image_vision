@@ -1,0 +1,79 @@
+# Background Removal
+
+> #### Livebook Desktop users {: .info}
+>
+> Livebook Desktop launches as a GUI app and does **not** inherit your terminal's `PATH`. If `Mix.install` below fails with "cargo: command not found" or similar, your Rust toolchain isn't visible to Livebook Desktop. Fix by creating `~/.livebookdesktop.sh` with at minimum:
+>
+> ```sh
+> export PATH="$HOME/.cargo/bin:$PATH"
+> # If you use mise/asdf, also activate them here.
+> ```
+>
+> Restart Livebook Desktop after editing the file. See the project [README](https://github.com/elixir-image/image_vision#prerequisites) for details on which toolchains are needed.
+
+```elixir
+Mix.install([
+  {:image_vision, "~> 0.2"},
+  {:kino, "~> 0.14"},
+  # Background removal uses an ONNX model via Ortex.
+  {:ortex, "~> 0.1"}
+])
+```
+
+`Image.Background` removes the background from any image — class-agnostic salient-object detection. The model decides what's the subject and isolates it. Powered by [BiRefNet lite](https://huggingface.co/onnx-community/BiRefNet_lite-ONNX) (MIT, ~210 MB; downloads on first call).
+
+## Upload an image
+
+```elixir
+input = Kino.Input.image("Image with a clear foreground subject")
+```
+
+```elixir
+image =
+  input
+  |> Kino.Input.read()
+  |> Image.from_kino!()
+```
+
+## Foreground mask
+
+```elixir
+mask = Image.Background.mask(image)
+```
+
+```elixir
+Kino.Layout.grid(
+  [
+    Kino.Layout.grid([image, Kino.Markdown.new("**Original**")], boxed: true),
+    Kino.Layout.grid([mask, Kino.Markdown.new("**Foreground mask**")], boxed: true)
+  ],
+  columns: 2
+)
+```
+
+## Cutout (background made transparent)
+
+```elixir
+{:ok, cutout} = Image.Background.remove(image)
+
+Kino.Layout.grid(
+  [
+    Kino.Layout.grid([image, Kino.Markdown.new("**Original**")], boxed: true),
+    Kino.Layout.grid([cutout, Kino.Markdown.new("**Cutout (transparent BG)**")], boxed: true)
+  ],
+  columns: 2
+)
+```
+
+## Composite onto a different background
+
+The cutout has an alpha channel, so you can composite it over any other image with `Image.compose/2`. Try generating a coloured background and pasting the cutout on top:
+
+```elixir
+{:ok, backdrop} =
+  Image.new(Image.width(cutout), Image.height(cutout), color: [220, 240, 255])
+
+{:ok, recomposed} = Image.compose(backdrop, cutout)
+
+recomposed
+```

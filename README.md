@@ -1,6 +1,6 @@
 # ImageVision
 
-`ImageVision` is a simple, opinionated image vision library for Elixir. It sits alongside the [`image`](https://hex.pm/packages/image) library and answers three questions about any image — **what's in it**, **where are the objects**, and **which pixels belong to which object** — with strong defaults and no ML expertise required.
+`ImageVision` is a simple, opinionated image vision library for Elixir. It sits alongside the [`image`](https://hex.pm/packages/image) library and answers common questions about an image — **what's in it**, **where are the objects**, **which pixels belong to which object**, **what's the foreground**, **describe it in words**, **does it match these labels** — with strong defaults and no ML expertise required.
 
 ## Quick start
 
@@ -34,6 +34,17 @@ iex> {:ok, cutout} = Image.Segmentation.apply_mask(puppy, mask)
 # Embedding — 768-dim feature vector for similarity search
 iex> Image.Classification.embed(puppy)
 #Nx.Tensor<f32[768]>
+
+# Background removal — class-agnostic foreground cutout
+iex> {:ok, cutout} = Image.Background.remove(puppy)
+
+# Image captioning — natural-language description
+iex> Image.Captioning.caption(puppy)
+"a small brown and white puppy sitting on a wooden floor"
+
+# Zero-shot classification — your labels, no retraining required
+iex> Image.ZeroShot.classify(puppy, ["a dog", "a cat", "a horse"])
+[%{label: "a dog", score: 0.998}, %{label: "a cat", score: 0.002}, ...]
 ```
 
 ## Installation
@@ -43,7 +54,7 @@ Add `:image_vision` to `mix.exs` along with whichever optional ML backends you n
 ```elixir
 def deps do
   [
-    {:image_vision, "~> 0.1"},
+    {:image_vision, "~> 0.2"},
 
     # Required for Image.Classification and Image.Classification.embed/2
     {:bumblebee, "~> 0.6"},
@@ -83,9 +94,13 @@ Model weights are downloaded on first call and cached on disk. Across all three 
 | Task | Default model | Size |
 |---|---|---|
 | Classification | `facebook/convnext-tiny-224` | ~110 MB |
+| Embedding | `facebook/dinov2-base` | ~340 MB |
 | Detection | `onnx-community/rtdetr_r50vd` | ~175 MB |
 | Segmentation (SAM 2) | `SharpAI/sam2-hiera-tiny-onnx` | ~150 MB |
 | Segmentation (panoptic) | `Xenova/detr-resnet-50-panoptic` | ~175 MB |
+| Background removal | `onnx-community/BiRefNet_lite-ONNX` | ~210 MB |
+| Captioning | `Salesforce/blip-image-captioning-base` | ~990 MB |
+| Zero-shot classification | `openai/clip-vit-base-patch32` | ~605 MB |
 
 The first call to each task therefore appears to "hang" while weights download — that's expected, not a bug.
 
@@ -95,7 +110,7 @@ To pre-download all default models before first use (recommended for production 
 mix image_vision.download_models
 ```
 
-Pass `--classify`, `--detect`, or `--segment` to limit scope.
+Pass `--classify`, `--detect`, `--segment`, `--background`, `--caption`, or `--zero-shot` to limit scope.
 
 ### Livebook Desktop
 
@@ -177,6 +192,9 @@ config :image_vision, :classifier,
 
 ## Guides
 
-- [Classification](https://github.com/elixir-image/image_vision/blob/v0.1.0/guides/classification.md) — classifying images and computing embeddings
-- [Detection](https://github.com/elixir-image/image_vision/blob/v0.1.0/guides/detection.md) — bounding-box object detection
-- [Segmentation](https://github.com/elixir-image/image_vision/blob/v0.1.0/guides/segmentation.md) — promptable and panoptic segmentation
+- [Classification](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/classification.md) — classifying images and computing embeddings
+- [Detection](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/detection.md) — bounding-box object detection
+- [Segmentation](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/segmentation.md) — promptable and panoptic segmentation
+- [Background removal](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/background.md) — class-agnostic foreground cutout
+- [Captioning](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/captioning.md) — natural-language image descriptions
+- [Zero-shot classification](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/zero_shot.md) — classify against arbitrary labels via CLIP

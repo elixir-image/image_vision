@@ -1,0 +1,139 @@
+# Zero-Shot Classification
+
+> #### Livebook Desktop users {: .info}
+>
+> Livebook Desktop launches as a GUI app and does **not** inherit your terminal's `PATH`. If `Mix.install` below fails with "cargo: command not found" or similar, your Rust toolchain isn't visible to Livebook Desktop. Fix by creating `~/.livebookdesktop.sh` with at minimum:
+>
+> ```sh
+> export PATH="$HOME/.cargo/bin:$PATH"
+> # If you use mise/asdf, also activate them here.
+> ```
+>
+> Restart Livebook Desktop after editing the file. See the project [README](https://github.com/elixir-image/image_vision#prerequisites) for details on which toolchains are needed.
+
+```elixir
+Mix.install([
+  {:image_vision, "~> 0.2"},
+  {:kino, "~> 0.14"},
+  # Zero-shot uses a Bumblebee CLIP model directly via the persistent_term
+  # cache. No serving config needed — first call loads the model lazily.
+  {:bumblebee, "~> 0.6"},
+  {:nx, "~> 0.10"},
+  {:exla, "~> 0.10"}
+])
+```
+
+```elixir
+# Use EXLA as the Nx backend so CLIP runs on the optimised path.
+Nx.global_default_backend(EXLA.Backend)
+```
+
+`Image.ZeroShot` classifies an image against arbitrary labels you supply at call time, no retraining needed. Where `Image.Classification` is locked to its 1000 ImageNet classes, here you decide the label space per call. Powered by [OpenAI CLIP ViT-B/32](https://huggingface.co/openai/clip-vit-base-patch32) (MIT, ~600 MB; downloads on first call).
+
+## Upload an image and pick labels
+
+```elixir
+form =
+  Kino.Control.form(
+    [
+      image: Kino.Input.image("Image to classify"),
+      labels:
+        Kino.Input.text("Candidate labels (comma-separated)",
+          default: "a dog, a cat, a horse, a car, a bicycle"
+        )
+    ],
+    submit: "Classify"
+  )
+```
+
+## Run the classifier
+
+```elixir
+form
+|> Kino.Control.stream()
+|> Kino.listen(fn %{data: %{image: img_input, labels: labels_input}} ->
+  if img_input == nil or labels_input in [nil, ""] do
+    Kino.Markdown.new("_Upload an image and supply at least one label, then submit._")
+  else
+    image = Image.from_kino!(img_input)
+
+    labels =
+      labels_input
+      |> String.split(",")
+      |> Enum.map(&String.trim/1)
+      |> Enum.reject(&(&1 == ""))
+
+    rows =
+      image
+      |> Image.ZeroShot.classify(labels)
+      |> Enum.map(fn %{label: label, score: score} ->
+        %{"Label" => label, "Confidence" => "#{Float.round(score * 100, 1)}%"}
+      end)
+
+    Kino.Layout.grid(
+      [
+        Kino.Layout.grid([image, Kino.Markdown.new("**Original**")], boxed: true),
+        Kino.DataTable.new(rows)
+      ],
+      columns: 2
+    )
+  end
+end)
+```
+
+## Image-to-image similarity
+
+CLIP also embeds images in the same space as text, so you can ask "how similar are these two pictures?" — useful for "find similar images" without standing up a vector database.
+
+```elixir
+similarity_form =
+  Kino.Control.form(
+    [
+      image1: Kino.Input.image("First image"),
+      image2: Kino.Input.image("Second image")
+    ],
+    submit: "Compare"
+  )
+```
+
+```elixir
+similarity_form
+|> Kino.Control.stream()
+|> Kino.listen(fn %{data: %{image1: a, image2: b}} ->
+  if a && b do
+    img1 = Image.from_kino!(a)
+    img2 = Image.from_kino!(b)
+    score = Image.ZeroShot.similarity(img1, img2)
+
+    Kino.Layout.grid(
+      [
+        Kino.Layout.grid([img1, Kino.Markdown.new("**Image 1**")], boxed: true),
+        Kino.Layout.grid([img2, Kino.Markdown.new("**Image 2**")], boxed: true),
+        Kino.Markdown.new("**Similarity:** #{Float.round(score, 3)}")
+      ],
+      columns: 2
+    )
+  else
+    Kino.Markdown.new("_Upload two images, then submit._")
+  end
+end)
+```
+
+Higher similarity (closer to `1.0`) means more visually/semantically similar in CLIP's learned embedding space. Two photos of different dogs typically score higher than a dog and a car, even when pixel-level differences are large.
+
+## Tips for better accuracy
+
+CLIP was trained on natural-language captions, so it understands sentences much better than bare nouns. The default prompt template `"a photo of {label}"` already does this for you. If your labels are domain-specific (medical scans, technical diagrams, document scans), a domain-tailored template helps:
+
+```elixir
+Image.ZeroShot.classify(image, ["normal", "fracture", "dislocation"],
+  template: "an X-ray showing {label}")
+```
+
+If your labels are already full sentences, disable the template:
+
+```elixir
+Image.ZeroShot.classify(image,
+  ["a person riding a horse", "a person walking a dog"],
+  template: nil)
+```

@@ -20,7 +20,8 @@ defmodule ImageVision.Application do
   if ImageVision.bumblebee_configured?() do
     @services [
       {{Image.Classification, :classifier, []}, false},
-      {{Image.Classification, :embedder, []}, false}
+      {{Image.Classification, :embedder, []}, false},
+      {{Image.Captioning, :captioner, []}, false}
     ]
 
     defp children(true) do

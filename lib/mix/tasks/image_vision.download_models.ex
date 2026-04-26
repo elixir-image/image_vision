@@ -3,13 +3,15 @@ defmodule Mix.Tasks.ImageVision.DownloadModels do
 
   @moduledoc """
   Pre-downloads the default models used by `Image.Classification`,
-  `Image.Segmentation`, and `Image.Detection` so that first-call
-  latency is eliminated and the application can run fully offline.
+  `Image.Segmentation`, `Image.Detection`, `Image.Background`,
+  `Image.Captioning`, and `Image.ZeroShot` so that first-call latency
+  is eliminated and the application can run fully offline.
 
-  By default, every category's models are fetched. Pass one or more of
-  `--classify`, `--segment`, `--detect` to limit the scope. Any
-  category whose optional dependency is not loaded is skipped with a
-  notice rather than treated as an error.
+  By default, every category's models are fetched. Pass one or more
+  of `--classify`, `--segment`, `--detect`, `--background`,
+  `--caption`, `--zero-shot` to limit the scope. Any category whose
+  optional dependency is not loaded is skipped with a notice rather
+  than treated as an error.
 
   ONNX weights for segmentation and detection are stored under the
   `ImageVision.ModelCache` cache root (see that module for cache
@@ -22,6 +24,7 @@ defmodule Mix.Tasks.ImageVision.DownloadModels do
       mix image_vision.download_models
       mix image_vision.download_models --classify
       mix image_vision.download_models --segment --detect
+      mix image_vision.download_models --background --caption --zero-shot
 
   ## Configuration
 
@@ -46,6 +49,15 @@ defmodule Mix.Tasks.ImageVision.DownloadModels do
   * `--detect` downloads the RT-DETR ONNX weights. Requires
     `:ortex`.
 
+  * `--background` downloads the BiRefNet lite ONNX weights for
+    background removal. Requires `:ortex`.
+
+  * `--caption` downloads the BLIP image-captioning model, featurizer,
+    tokenizer, and generation config. Requires `:bumblebee`.
+
+  * `--zero-shot` downloads the CLIP model, featurizer, and tokenizer
+    for zero-shot classification. Requires `:bumblebee`.
+
   """
 
   use Mix.Task
@@ -65,12 +77,24 @@ defmodule Mix.Tasks.ImageVision.DownloadModels do
   @rtdetr_repo "onnx-community/rtdetr_r50vd"
   @rtdetr_files ["onnx/model.onnx"]
 
+  @birefnet_repo "onnx-community/BiRefNet_lite-ONNX"
+  @birefnet_files ["onnx/model.onnx"]
+
   @default_classifier_model {:hf, "facebook/convnext-tiny-224"}
   @default_classifier_featurizer {:hf, "facebook/convnext-tiny-224"}
   @default_embedder_model {:hf, "facebook/dinov2-base"}
   @default_embedder_featurizer {:hf, "facebook/dinov2-base"}
+  @default_captioner_repo "Salesforce/blip-image-captioning-base"
+  @default_zero_shot_repo "openai/clip-vit-base-patch32"
 
-  @switches [classify: :boolean, segment: :boolean, detect: :boolean]
+  @switches [
+    classify: :boolean,
+    segment: :boolean,
+    detect: :boolean,
+    background: :boolean,
+    caption: :boolean,
+    zero_shot: :boolean
+  ]
 
   @impl Mix.Task
   def run(argv) do
@@ -78,7 +102,7 @@ defmodule Mix.Tasks.ImageVision.DownloadModels do
 
     categories =
       case Enum.filter(options, fn {_k, v} -> v end) do
-        [] -> [:classify, :segment, :detect]
+        [] -> [:classify, :segment, :detect, :background, :caption, :zero_shot]
         selected -> Enum.map(selected, fn {k, _} -> k end)
       end
 
@@ -142,6 +166,63 @@ defmodule Mix.Tasks.ImageVision.DownloadModels do
     end
   end
 
+  defp download(:background) do
+    Mix.shell().info("")
+    Mix.shell().info("[background removal]")
+
+    if ortex_loaded?() do
+      Enum.each(@birefnet_files, &fetch_onnx(@birefnet_repo, &1))
+    else
+      Mix.shell().info("  skipped — :ortex dependency not loaded")
+    end
+  end
+
+  defp download(:caption) do
+    Mix.shell().info("")
+    Mix.shell().info("[captioning]")
+
+    if bumblebee_loaded?() do
+      Application.ensure_all_started(:bumblebee)
+
+      captioner = configuration(:captioner)
+      repo = repo_from(captioner, :model, @default_captioner_repo)
+
+      load_bumblebee(:model, {:hf, repo})
+      load_bumblebee(:featurizer, {:hf, repo_from(captioner, :featurizer, repo)})
+      load_bumblebee(:tokenizer, {:hf, repo_from(captioner, :tokenizer, repo)})
+      load_bumblebee(:generation_config, {:hf, repo_from(captioner, :generation_config, repo)})
+    else
+      Mix.shell().info("  skipped — :bumblebee dependency not loaded")
+    end
+  end
+
+  defp download(:zero_shot) do
+    Mix.shell().info("")
+    Mix.shell().info("[zero-shot classification]")
+
+    if bumblebee_loaded?() do
+      Application.ensure_all_started(:bumblebee)
+
+      zero_shot = configuration(:zero_shot)
+      repo = repo_from(zero_shot, :repo, @default_zero_shot_repo)
+
+      load_bumblebee(:model, {:hf, repo})
+      load_bumblebee(:featurizer, {:hf, repo})
+      load_bumblebee(:tokenizer, {:hf, repo})
+    else
+      Mix.shell().info("  skipped — :bumblebee dependency not loaded")
+    end
+  end
+
+  # Extract a HuggingFace repo string from a config keyword list.
+  # Accepts either a `{:hf, "..."}` tuple or falls back to `default`.
+  defp repo_from(config, key, default) do
+    case Keyword.get(config, key) do
+      {:hf, name} -> name
+      _other -> default
+    end
+  end
+
   defp fetch_onnx(repo, filename) do
     if ImageVision.ModelCache.cached?(repo, filename) do
       Mix.shell().info("  cached    #{repo}/#{filename}")
@@ -159,6 +240,8 @@ defmodule Mix.Tasks.ImageVision.DownloadModels do
       case kind do
         :model -> Bumblebee.load_model(spec)
         :featurizer -> Bumblebee.load_featurizer(spec)
+        :tokenizer -> Bumblebee.load_tokenizer(spec)
+        :generation_config -> Bumblebee.load_generation_config(spec)
       end
 
     case result do

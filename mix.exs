@@ -1,7 +1,7 @@
 defmodule ImageVision.MixProject do
   use Mix.Project
 
-  @version "0.1.0"
+  @version "0.2.0"
   @app_name "image_vision"
 
   def project do
@@ -131,7 +131,10 @@ defmodule ImageVision.MixProject do
         "CHANGELOG.md",
         "guides/classification.md",
         "guides/segmentation.md",
-        "guides/detection.md"
+        "guides/detection.md",
+        "guides/background.md",
+        "guides/captioning.md",
+        "guides/zero_shot.md"
       ],
       &File.exists?/1
     )

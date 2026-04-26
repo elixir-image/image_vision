@@ -1,5 +1,23 @@
 # Changelog
 
+## ImageVision v0.2.0
+
+### Added
+
+* **`Image.Background`** — class-agnostic foreground/background separation. `remove/2` returns the input image with the background made transparent (alpha mask applied); `mask/2` returns the foreground mask alone for custom compositing. Default model is [BiRefNet lite](https://huggingface.co/onnx-community/BiRefNet_lite-ONNX) (MIT, ~210 MB), powered by Ortex.
+
+* **`Image.Captioning`** — natural-language description of an image. `caption/2` returns a string like `"a man riding a horse with a bird of prey"`. Default model is [BLIP base](https://huggingface.co/Salesforce/blip-image-captioning-base) (BSD-3-Clause, ~990 MB), powered by Bumblebee. Heavy enough that it is not autostarted by default; configure `autostart: true` or add the child spec to your supervisor.
+
+* **`Image.ZeroShot`** — classify an image against arbitrary labels you supply at call time, no retraining. `classify/3` returns `[%{label, score}]` sorted descending; `label/3` returns just the best label; `similarity/3` computes CLIP-space cosine similarity between two images. Default model is [OpenAI CLIP ViT-B/32](https://huggingface.co/openai/clip-vit-base-patch32) (MIT, ~600 MB), powered by Bumblebee. Default prompt template `"a photo of {label}"` boosts accuracy on bare-noun labels; override or disable as needed.
+
+* New flags `--background`, `--caption`, and `--zero-shot` for `mix image_vision.download_models` to pre-fetch the new defaults.
+
+### Changed
+
+* The `:files` list in `mix.exs` now ships `logo.jpg` so the docs render the project logo on hexdocs.pm.
+
+See the [README](https://github.com/elixir-image/image_vision/blob/v0.2.0/README.md) for the full feature list and the [background](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/background.md), [captioning](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/captioning.md), and [zero-shot](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/zero_shot.md) guides for detail on the new tasks.
+
 ## ImageVision v0.1.0
 
 `image_vision` is a thin, opinionated wrapper around the Elixir ML ecosystem (Bumblebee, Ortex, Nx) that sits next to the [`image`](https://hex.pm/packages/image) library. It exposes three vision tasks through a small API designed for developers who are not ML experts: pass a `t:Vix.Vips.Image.t/0` in, get useful results out. Strong, permissively-licensed defaults handle model selection, backend configuration, and weight downloads automatically.

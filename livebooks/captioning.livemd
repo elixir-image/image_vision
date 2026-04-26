@@ -1,0 +1,95 @@
+# Image Captioning
+
+> #### Livebook Desktop users {: .info}
+>
+> Livebook Desktop launches as a GUI app and does **not** inherit your terminal's `PATH`. If `Mix.install` below fails with "cargo: command not found" or similar, your Rust toolchain isn't visible to Livebook Desktop. Fix by creating `~/.livebookdesktop.sh` with at minimum:
+>
+> ```sh
+> export PATH="$HOME/.cargo/bin:$PATH"
+> # If you use mise/asdf, also activate them here.
+> ```
+>
+> Restart Livebook Desktop after editing the file. See the project [README](https://github.com/elixir-image/image_vision#prerequisites) for details on which toolchains are needed.
+
+```elixir
+Mix.install(
+  [
+    {:image_vision, "~> 0.2"},
+    {:kino, "~> 0.14"},
+    # Captioning uses a Bumblebee serving (BLIP).
+    {:bumblebee, "~> 0.6"},
+    {:nx, "~> 0.10"},
+    {:exla, "~> 0.10"}
+  ],
+  config: [
+    # Tell ImageVision.Application to start the captioning serving
+    # under its own supervisor. BLIP weights (~990 MB) download from
+    # HuggingFace on first run — by far the heaviest of the library's
+    # default models. Allow several minutes for the first cell below.
+    image_vision: [captioner: [autostart: true]]
+  ]
+)
+```
+
+```elixir
+# Use EXLA as the Nx backend for any tensor work in this notebook.
+Nx.global_default_backend(EXLA.Backend)
+```
+
+`Image.Captioning` describes an image in plain English. Useful for accessibility (alt text), image search, content indexing, and tooling that needs a quick natural-language summary. Default model is [BLIP base](https://huggingface.co/Salesforce/blip-image-captioning-base) (BSD-3-Clause, ~990 MB).
+
+## Upload an image
+
+```elixir
+input = Kino.Input.image("Image to describe")
+```
+
+```elixir
+image =
+  input
+  |> Kino.Input.read()
+  |> Image.from_kino!()
+```
+
+## Generate a caption
+
+```elixir
+caption = Image.Captioning.caption(image)
+
+Kino.Layout.grid(
+  [
+    Kino.Layout.grid([image, Kino.Markdown.new("**Original**")], boxed: true),
+    Kino.Markdown.new("**Caption**\n\n> #{caption}")
+  ],
+  columns: 2
+)
+```
+
+## Caption a few
+
+Try several images and see how the model describes them:
+
+```elixir
+inputs = Kino.Input.image("Add another image to caption", multiple: true)
+```
+
+```elixir
+case Kino.Input.read(inputs) do
+  [] ->
+    Kino.Markdown.new("_Upload one or more images above to see captions._")
+
+  files ->
+    rows =
+      for file <- files do
+        img = Image.from_kino!(file)
+        text = Image.Captioning.caption(img)
+        %{"Image" => img, "Caption" => text}
+      end
+
+    Kino.DataTable.new(rows)
+end
+```
+
+## Why the first call is slow
+
+A captioner is much heavier than a classifier. The encoder runs once per image, but the text decoder runs autoregressively — one forward pass per generated token. A typical 20-word caption is ~20 forward passes. The serving warm-up loads ~990 MB of weights and JIT-compiles the decoder, which takes 10–30 seconds on first call. Subsequent calls reuse the loaded model and are much faster.
