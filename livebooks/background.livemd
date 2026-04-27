@@ -1,6 +1,8 @@
 # Background Removal
 
-> #### Livebook Desktop users {: .info}
+## Section
+
+> #### Livebook Desktop users
 >
 > Livebook Desktop launches as a GUI app and does **not** inherit your terminal's `PATH`. If `Mix.install` below fails with "cargo: command not found" or similar, your Rust toolchain isn't visible to Livebook Desktop. Fix by creating `~/.livebookdesktop.sh` with at minimum:
 >
@@ -15,6 +17,7 @@
 Mix.install([
   {:image_vision, "~> 0.2"},
   {:kino, "~> 0.14"},
+  {:bumblebee, "~> 0.6"},
   # Background removal uses an ONNX model via Ortex.
   {:ortex, "~> 0.1"}
 ])
