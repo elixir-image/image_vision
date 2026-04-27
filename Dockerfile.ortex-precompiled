@@ -104,10 +104,14 @@ end
 LIBEOF
 EOF
 
-# Fetch the tinymodel.onnx fixture from the Ortex repo. This file
-# defines a single Float32 input of shape [nil, 100] and a single
-# Float32 output of shape [nil, 200] — small enough to load and run
-# in milliseconds.
+# Fetch the tinymodel.onnx fixture from the Ortex repo. This is the
+# tiny model Ortex's own doctests use. Its current schema:
+#
+#   inputs:  x (Int32,   [-1, 100])
+#            y (Float32, [-1, 100])
+#   outputs: output1, output2, output3  (Float32, [-1, 10])
+#
+# Small enough to load and run in milliseconds.
 RUN mkdir -p models \
     && curl -fsSL -o models/tinymodel.onnx \
         "https://raw.githubusercontent.com/${ORTEX_REPO}/${ORTEX_MODEL_REF}/models/tinymodel.onnx" \
@@ -128,22 +132,27 @@ RUN echo "=== Ortex priv/native contents ===" \
     && ldd deps/ortex/priv/native/*.so 2>&1 || true
 
 # End-to-end smoke test: load the NIF, load tinymodel.onnx, run a
-# forward pass with zeroed input. Failure here means the NIF loaded
+# forward pass with zeroed inputs. Failure here means the NIF loaded
 # but onnxruntime is broken in some other way.
+#
+# tinymodel.onnx takes a tuple of {x: int32[-1, 100], y: float32[-1, 100]}
+# and returns a tuple of three float32[-1, 10] tensors. Each output's
+# shape with batch=1 is {1, 10}.
 RUN mix run -e ' \
   IO.puts("--- Ortex NIF smoke test ---"); \
   exports = Ortex.Native.module_info(:exports); \
   IO.puts("Ortex.Native exports #{length(exports)} functions"); \
   model = Ortex.load("./models/tinymodel.onnx"); \
   IO.puts("Loaded: #{inspect(model)}"); \
-  input = Nx.broadcast(0.0, {1, 100}) |> Nx.as_type(:f32); \
-  {output} = Ortex.run(model, input); \
-  shape = output |> Nx.backend_transfer() |> Nx.shape(); \
-  IO.puts("Inference output shape: #{inspect(shape)}"); \
-  if shape == {1, 200} do \
+  x = Nx.broadcast(0, {1, 100}) |> Nx.as_type(:s32); \
+  y = Nx.broadcast(0.0, {1, 100}) |> Nx.as_type(:f32); \
+  {out1, out2, out3} = Ortex.run(model, {x, y}); \
+  shapes = Enum.map([out1, out2, out3], &(Nx.backend_transfer(&1) |> Nx.shape())); \
+  IO.puts("Inference output shapes: #{inspect(shapes)}"); \
+  if shapes == [{1, 10}, {1, 10}, {1, 10}] do \
     IO.puts("PASS: Ortex precompiled NIF works end-to-end."); \
   else \
-    IO.puts("FAIL: unexpected output shape #{inspect(shape)}"); \
+    IO.puts("FAIL: unexpected output shapes #{inspect(shapes)}"); \
     System.halt(1); \
   end \
 '
