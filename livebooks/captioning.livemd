@@ -1,6 +1,8 @@
 # Image Captioning
 
-> #### Livebook Desktop users {: .info}
+## Section
+
+> #### Livebook Desktop users
 >
 > Livebook Desktop launches as a GUI app and does **not** inherit your terminal's `PATH`. If `Mix.install` below fails with "cargo: command not found" or similar, your Rust toolchain isn't visible to Livebook Desktop. Fix by creating `~/.livebookdesktop.sh` with at minimum:
 >
@@ -63,31 +65,6 @@ Kino.Layout.grid(
   ],
   columns: 2
 )
-```
-
-## Caption a few
-
-Try several images and see how the model describes them:
-
-```elixir
-inputs = Kino.Input.image("Add another image to caption", multiple: true)
-```
-
-```elixir
-case Kino.Input.read(inputs) do
-  [] ->
-    Kino.Markdown.new("_Upload one or more images above to see captions._")
-
-  files ->
-    rows =
-      for file <- files do
-        img = Image.from_kino!(file)
-        text = Image.Captioning.caption(img)
-        %{"Image" => img, "Caption" => text}
-      end
-
-    Kino.DataTable.new(rows)
-end
 ```
 
 ## Why the first call is slow
