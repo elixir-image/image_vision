@@ -109,6 +109,12 @@ defmodule Mix.Tasks.ImageVision.DownloadModels do
     Mix.Task.run("app.config")
     Application.ensure_all_started(:req)
 
+    # The dev/prod Nx config sets `default_backend: EXLA.Backend`, so
+    # any tensor allocation Bumblebee does when loading a model
+    # routes through EXLA. The :exla application has to be started
+    # for that to work — it isn't pulled in by :req or :bumblebee.
+    Application.ensure_all_started(:exla)
+
     Enum.each(categories, &download/1)
 
     Mix.shell().info("")
