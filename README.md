@@ -38,6 +38,10 @@ iex> Image.Classification.embed(puppy)
 # Background removal — class-agnostic foreground cutout
 iex> {:ok, cutout} = Image.Background.remove(puppy)
 
+# Face detection — bounding boxes + 5 facial landmarks
+iex> [%{box: _, score: _, landmarks: _} | _] = Image.FaceDetection.detect(portrait)
+iex> {:ok, cropped_to_face} = Image.FaceDetection.crop_largest(portrait, padding: 0.2)
+
 # Image captioning — natural-language description
 iex> Image.Captioning.caption(puppy)
 "a small brown and white puppy sitting on a wooden floor"

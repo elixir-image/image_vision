@@ -1,7 +1,7 @@
 defmodule ImageVision.MixProject do
   use Mix.Project
 
-  @version "0.2.0"
+  @version "0.3.0"
   @app_name "image_vision"
 
   def project do
