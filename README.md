@@ -58,7 +58,7 @@ Add `:image_vision` to `mix.exs` along with whichever optional ML backends you n
 ```elixir
 def deps do
   [
-    {:image_vision, "~> 0.2"},
+    {:image_vision, "~> 0.3"},
 
     # Required for Image.Classification and Image.Classification.embed/2
     {:bumblebee, "~> 0.6"},
@@ -199,9 +199,10 @@ config :image_vision, :classifier,
 
 ## Guides
 
-- [Classification](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/classification.md) — classifying images and computing embeddings
-- [Detection](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/detection.md) — bounding-box object detection
-- [Segmentation](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/segmentation.md) — promptable and panoptic segmentation
-- [Background removal](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/background.md) — class-agnostic foreground cutout
-- [Captioning](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/captioning.md) — natural-language image descriptions
-- [Zero-shot classification](https://github.com/elixir-image/image_vision/blob/v0.2.0/guides/zero_shot.md) — classify against arbitrary labels via CLIP
+- [Overview](https://github.com/elixir-image/image_vision/blob/v0.3.0/guides/overview.md) — the four computer-vision task families (classification, detection, segmentation, description), a decision table mapping intent → module, worked recipes per module, and a section on composing tasks (face-aware crops, background swap, visual search, custom-taxonomy moderation)
+- [Classification](https://github.com/elixir-image/image_vision/blob/v0.3.0/guides/classification.md) — classifying images and computing embeddings
+- [Detection](https://github.com/elixir-image/image_vision/blob/v0.3.0/guides/detection.md) — bounding-box object detection
+- [Segmentation](https://github.com/elixir-image/image_vision/blob/v0.3.0/guides/segmentation.md) — promptable and panoptic segmentation
+- [Background removal](https://github.com/elixir-image/image_vision/blob/v0.3.0/guides/background.md) — class-agnostic foreground cutout
+- [Captioning](https://github.com/elixir-image/image_vision/blob/v0.3.0/guides/captioning.md) — natural-language image descriptions
+- [Zero-shot classification](https://github.com/elixir-image/image_vision/blob/v0.3.0/guides/zero_shot.md) — classify against arbitrary labels via CLIP

@@ -129,6 +129,7 @@ defmodule ImageVision.MixProject do
         "README.md",
         "LICENSE.md",
         "CHANGELOG.md",
+        "guides/overview.md",
         "guides/classification.md",
         "guides/segmentation.md",
         "guides/detection.md",
