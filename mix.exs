@@ -1,7 +1,7 @@
 defmodule ImageVision.MixProject do
   use Mix.Project
 
-  @version "0.3.0"
+  @version "0.2.0"
   @app_name "image_vision"
 
   def project do
@@ -118,8 +118,15 @@ defmodule ImageVision.MixProject do
       logo: "logo.jpg",
       extra_section: "Guides",
       extras: extras(),
-      formatters: ["html"],
+      groups_for_extras: groups_for_extras(),
+      formatters: ["html", "markdown"],
       skip_undefined_reference_warnings_on: ["changelog", "CHANGELOG.md"]
+    ]
+  end
+
+  defp groups_for_extras do
+    [
+      Guides: ~r"guides/.*"
     ]
   end
 
@@ -133,6 +140,7 @@ defmodule ImageVision.MixProject do
         "guides/classification.md",
         "guides/segmentation.md",
         "guides/detection.md",
+        "guides/face_detection.md",
         "guides/background.md",
         "guides/captioning.md",
         "guides/zero_shot.md"

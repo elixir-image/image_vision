@@ -1,14 +1,10 @@
 # Changelog
 
-## ImageVision v0.3.0
+## [0.2.0] 2026-05-02
 
 ### Added
 
 * **`Image.FaceDetection`** — fast face detection with bounding boxes, confidence scores, and the five canonical facial landmarks (right eye, left eye, nose tip, right mouth corner, left mouth corner). Default model is [YuNet 2023-March](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet) hosted at [`opencv/face_detection_yunet`](https://huggingface.co/opencv/face_detection_yunet) — MIT licensed, ~340 KB on disk, real-time on CPU. Functions: `detect/2`, `boxes/2`, `crop_largest/2`, `draw_boxes/3`. The `crop_largest/2` helper is the wire-in point for face-aware crop bias used by sibling `image_plug` (`gravity: :face`, ImageKit `z-`, Cloudflare `face-zoom`).
-
-## ImageVision v0.2.0
-
-### Added
 
 * **`Image.Background`** — class-agnostic foreground/background separation. `remove/2` returns the input image with the background made transparent (alpha mask applied); `mask/2` returns the foreground mask alone for custom compositing. Default model is [BiRefNet lite](https://huggingface.co/onnx-community/BiRefNet_lite-ONNX) (MIT, ~210 MB), powered by Ortex.
 
